@@ -8,18 +8,27 @@ Created on Thu Aug  2 12:52:42 2018
 
 import serial
 import argparse
+import paho.mqtt.client as mqtt
 
 pkg = []
 
-def do_sniff(serPort, slave_address):
+def do_sniff(serPort: serial, slave_address: int) -> int:
+    """Sniff all bytes from the serial port."""
+    temperature = 0
+    not_valid = True
     
-    read = serPort.read()
-    
-    if (read[0] == slave_address):
-        print(pkg)
-        pkg.clear()
+    while (not_valid):
+        read = serPort.read()
         
-    pkg.append(read.hex())
+        if (read[0] == slave_address):      
+            if (len(pkg) > 5):
+                temperature = (pkg[3] << 8) | pkg[4]
+                not_valid = False
+            pkg.clear()
+                  
+        pkg.append(read[0])
+        
+    return temperature
     
     
 def main():
@@ -36,10 +45,23 @@ def main():
     
     ser = serial.Serial(options.port, options.baudrate)                        
     print("Opened {} at {}. Slave address {}".format(options.port, options.baudrate, options.address))
+    
+    broker_address="localhost" 
+    client = mqtt.Client("P1") #create new instance
+    client.connect(broker_address) #connect to broker
         
     try:
          while True:
-            do_sniff(ser, options.address)
+            temperature = do_sniff(ser, options.address)
+            temp_frac = temperature / 10;
+                                   
+            
+            client.publish("temp", str(temp_frac))   #publish       
+            
+            print(temp_frac)
+            
+            
+            
     except KeyboardInterrupt:
         print('Ending...')
     

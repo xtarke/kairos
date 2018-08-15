@@ -11,8 +11,8 @@ import argparse
 
 pkg = []
 
-def do_sniff(serPort, slave_address):
-    
+def do_sniff(serPort: serial, slave_address: int):
+    """Sniff all bytes from the serial port."""
     read = serPort.read()
     
     if (read[0] == slave_address):
