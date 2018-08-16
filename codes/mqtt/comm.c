@@ -35,6 +35,8 @@ TaskHandle_t xHandlingPkgTask;
 #define RS485_USART 0
 
 
+volatile uint16_t temperature = 0;
+
 /**
   * @brief  Send data to RS485. TXEN PIN is assrted when trasmiting
   * @param	packet_buffer: pointer to byte packge
@@ -62,14 +64,10 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 void  status_task(void *pvParameters)
 {
     TickType_t my_time; // = xTaskGetTickCount();
-
     uint8_t i, error = 0;
-    uint16_t temperature = 0;
+    uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
-    gpio_enable(5, GPIO_OUTPUT);
-
-    uint8_t pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
-    uint8_t rx_pkg[16];
+    gpio_enable(TX_EN_PIN, GPIO_OUTPUT);
 
     //xSemaphoreTake(wifi_alive, portMAX_DELAY);
 

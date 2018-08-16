@@ -29,7 +29,7 @@
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
-#define MQTT_HOST ("192.168.0.113")
+#define MQTT_HOST ("10.0.0.2")
 #define MQTT_PORT 1883
 
 #define MQTT_USER NULL
@@ -204,7 +204,7 @@ void  mqtt_task(void *pvParameters)
 
 
     while(1) {
-        xSemaphoreTake(wifi_alive, portMAX_DELAY);
+        //xSemaphoreTake(wifi_alive, portMAX_DELAY);
         printf("%s: started\n\r", __func__);
         printf("%s: (Re)connecting to MQTT server %s ... ",__func__,
                MQTT_HOST);
