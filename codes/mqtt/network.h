@@ -11,11 +11,17 @@
 #include <semphr.h>
 
 #define PUB_MSG_LEN 16
+#define PUB_TPC_LEN 16
+
+typedef struct publisher_data{
+	char topic[PUB_TPC_LEN];
+	char data[PUB_MSG_LEN];
+} publisher_data_t;
 
 extern SemaphoreHandle_t wifi_alive;
 extern QueueHandle_t publish_queue;
 
-void  wifi_task(void *pvParameters);
+
 void  mqtt_task(void *pvParameters);
 
 

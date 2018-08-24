@@ -12,10 +12,13 @@
 #include <semphr.h>
 
 #include <stdint.h>
+#include <string.h>
 #include "esp/uart.h"
 
 #include "comm.h"
 #include "motors.h"
+
+#include "sysparam.h"
 
 QueueHandle_t tx_queue;
 QueueHandle_t rx_queue;
@@ -38,8 +41,8 @@ TaskHandle_t xHandlingPkgTask;
 volatile uint16_t temperature = 0;
 
 /**
-  * @brief  Send data to RS485. TXEN PIN is assrted when trasmiting
-  * @param	packet_buffer: pointer to byte packge
+  * @brief  Send data to RS485. TXEN PIN is asserted when transmitting
+  * @param	packet_buffer: pointer to byte package
   * @param  packet_size: packet size
   *
   * @retval None.
@@ -60,6 +63,34 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 }
 
 
+/**
+  * @brief  CRC 16 calculation.
+  * @param	buf: pointer to byte package.
+  * @param  len: packet size.
+  *
+  * @retval crc16 value with bytes swapped.
+  */
+uint16_t CRC16_2(uint8_t *buf, int len)
+{
+	uint16_t crc = 0xFFFF;
+	int i;
+
+	for (i = 0; i < len; i++)
+	{
+		crc ^= (uint16_t)buf[i];          // XOR byte into least sig. byte of crc
+
+		for (int i = 8; i != 0; i--) {    // Loop over each bit
+			if ((crc & 0x0001) != 0) {      // If the LSB is set
+				crc >>= 1;                    // Shift right and XOR 0xA001
+				crc ^= 0xA001;
+			}
+			else                            // Else LSB is not set
+				crc >>= 1;                    // Just shift right
+		}
+	}
+	// Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
+	return crc;
+}
 
 void  status_task(void *pvParameters)
 {
@@ -67,14 +98,15 @@ void  status_task(void *pvParameters)
     uint8_t i, error = 0;
     uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
-    gpio_enable(TX_EN_PIN, GPIO_OUTPUT);
+    memset(rx_pkg,0, sizeof(rx_pkg));
 
-    //xSemaphoreTake(wifi_alive, portMAX_DELAY);
+    /* Enable GPIO for 485 transceiver */
+    gpio_enable(TX_EN_PIN, GPIO_OUTPUT);
 
     while (1) {
        	vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-        send_data_rs485(pkg,5);
+       	send_data_rs485(pkg,5);
         my_time = xTaskGetTickCount();
         error = 0;
 
@@ -104,12 +136,8 @@ void  status_task(void *pvParameters)
 
 			temperature = (rx_pkg[3] << 8) | rx_pkg[4];
 			printf("%d.%d\n", temperature/10, temperature % 10);
+			printf("CRC: %x\n", CRC16_2(pkg,2));
 		}
-		 //temperature = (s[3] << 8) | s[4]
-
-//        if (xQueueSend(tx_queue, (void *)pkg, 0) == pdFALSE) {
-//        	debug("uart_queue overflow.\r\n");
-//        }
     }
 }
 
@@ -194,7 +222,7 @@ void  uart_task(void *pvParameters){
 	}
 }
 
-void  pkgParser_task(void *pvParameters)
+void pkgParser_task(void *pvParameters)
 {
 	uint8_t pkg[PKG_MAX_SIZE];
 
@@ -245,8 +273,6 @@ void  pkgParser_task(void *pvParameters)
    	    }
     }
 }
-
-
 
 
 
