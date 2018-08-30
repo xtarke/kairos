@@ -10,8 +10,8 @@
 
 #include <semphr.h>
 
-#define PUB_MSG_LEN 16
-#define PUB_TPC_LEN 16
+#define PUB_MSG_LEN 8
+#define PUB_TPC_LEN 24
 
 typedef struct publisher_data{
 	char topic[PUB_TPC_LEN];

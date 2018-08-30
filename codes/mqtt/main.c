@@ -46,17 +46,21 @@ static void  status_publish_task(void *pvParameters)
 	sysparam_get_string("hostname", &wifi_my_host_name);
 
 	if (!wifi_my_host_name){
-
+		printf("Invalid host name\n");
+		strncpy(to_publish.topic,"host_1/temperatura",PUB_TPC_LEN);
 	}
-
+	else {
+		strncpy(to_publish.topic, wifi_my_host_name,PUB_TPC_LEN);
+		free(wifi_my_host_name);
+		strncat(to_publish.topic,"/temperatura",PUB_TPC_LEN);
+	}
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 3000 / portTICK_PERIOD_MS);
 
+        snprintf(to_publish.data, PUB_MSG_LEN, "%d.%d", temperature/10, temperature%10);
 
-
-        snprintf(msg, PUB_MSG_LEN, "%d.%d", temperature/10, temperature%10);
-        if (xQueueSend(publish_queue, (void *)msg, 0) == pdFALSE) {
+        if (xQueueSend(publish_queue, (void *)&to_publish, 0) == pdFALSE) {
         	debug("Publish queue overflow.\r\n");
         }
     }
@@ -86,7 +90,7 @@ void user_init(void)
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
     //vSemaphoreCreateBinary(wifi_alive);
-    publish_queue = xQueueCreate(3, PUB_MSG_LEN);
+    publish_queue = xQueueCreate(8, sizeof(publisher_data_t));
 
     wifi_cfg();
 

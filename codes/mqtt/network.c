@@ -166,17 +166,20 @@ void  mqtt_task(void *pvParameters)
 
         while(1){
 
-            char msg[PUB_MSG_LEN - 1] = "\0";
-            while(xQueueReceive(publish_queue, (void *)msg, 0) ==
+            //char msg[PUB_MSG_LEN - 1] = "\0";
+
+        	publisher_data_t to_publish;
+
+            while(xQueueReceive(publish_queue, (void *)&to_publish, 0) ==
                   pdTRUE){
                 //printf("got message to publish\r\n");
                 mqtt_message_t message;
-                message.payload = msg;
+                message.payload = to_publish.data;
                 message.payloadlen = PUB_MSG_LEN;
                 message.dup = 0;
                 message.qos = MQTT_QOS1;
                 message.retained = 0;
-                ret = mqtt_publish(&client, "/beat", &message);
+                ret = mqtt_publish(&client, to_publish.topic, &message);
                 if (ret != MQTT_SUCCESS ){
                     printf("error while publishing message: %d\n", ret );
                     break;
