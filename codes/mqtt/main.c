@@ -16,7 +16,6 @@
 #include <semphr.h>
 #include <queue.h>
 
-#include "motors.h"
 #include "network.h"
 #include "comm.h"
 
@@ -36,13 +35,12 @@ extern uint16_t temperature;
 static void  status_publish_task(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    char msg[PUB_MSG_LEN];
 
     publisher_data_t to_publish;
 
     char *wifi_my_host_name = NULL;
 
-	/* Get MQTT host IP from web server confifguration */
+	/* Get MQTT host IP from web server configuration */
 	sysparam_get_string("hostname", &wifi_my_host_name);
 
 	if (!wifi_my_host_name){
@@ -91,20 +89,17 @@ void user_init(void)
 
     //vSemaphoreCreateBinary(wifi_alive);
     publish_queue = xQueueCreate(8, sizeof(publisher_data_t));
+    command_queue = xQueueCreate(4, sizeof(command_data_t));
 
     wifi_cfg();
 
-    /* Serial comm queues */
-    tx_queue = xQueueCreate(4, PKG_MAX_SIZE);
-    rx_queue = xQueueCreate(4, PKG_MAX_SIZE);
-
-   // xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
+    // xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
     //xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);
 
     //xTaskCreate(&uart_task, "uart_task", 256, NULL, 3, &xHandlingUartTask);
 
-    xTaskCreate(&status_task, "status_task", 256, NULL, 4, NULL);
-    //xTaskCreate(&pkgParser_task, "pkgParser_task", 256, NULL, 4, &xHandlingPkgTask);
+    xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
+    xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);
 
     xTaskCreate(&status_publish_task, "beat_task", 256, NULL, 6, NULL);
     xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 7, NULL);

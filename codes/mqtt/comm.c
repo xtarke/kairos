@@ -16,15 +16,9 @@
 #include "esp/uart.h"
 
 #include "comm.h"
-#include "motors.h"
 
 #include "sysparam.h"
-
-QueueHandle_t tx_queue;
-QueueHandle_t rx_queue;
-
-TaskHandle_t xHandlingUartTask;
-TaskHandle_t xHandlingPkgTask;
+#include "network.h"
 
 #define DEBUG
 
@@ -37,8 +31,10 @@ TaskHandle_t xHandlingPkgTask;
 #define TX_EN_PIN 5
 #define RS485_USART 0
 
+TaskHandle_t xHandling_485_cmd_task;
 
 volatile uint16_t temperature = 0;
+
 
 /**
   * @brief  Send data to RS485. TXEN PIN is asserted when transmitting
@@ -92,9 +88,9 @@ uint16_t CRC16_2(uint8_t *buf, int len)
 	return crc;
 }
 
-void  status_task(void *pvParameters)
+void status_task(void *pvParameters)
 {
-    TickType_t my_time; // = xTaskGetTickCount();
+    TickType_t my_time;
     uint8_t i, error = 0;
     uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
@@ -142,136 +138,34 @@ void  status_task(void *pvParameters)
 }
 
 
-void  uart_task(void *pvParameters){
+void commands_task(void *pvParameters){
+
 	BaseType_t xResult;
 	uint32_t ulNotifiedValue;
 
-	uint8_t pkg[PKG_MAX_SIZE] = { 0, 0, 0x13, 0, 0};
-	uint8_t i;
-	uint8_t size;
-	uint8_t retries;
+	command_data_t rx_data;
 
-	for (;;){
-		xResult = xTaskNotifyWait( pdFALSE,          /* Don't clear bits on entry. */
-		                           ULONG_MAX,        /* Clear all bits on exit. */
-		                           &ulNotifiedValue, /* Stores the notified value. */
-								   portMAX_DELAY);
+	while (1){
+		xTaskNotifyWait( pdFALSE,          /* Don't clear bits on entry. */
+					   ULONG_MAX,        /* Clear all bits on exit. */
+					   &ulNotifiedValue, /* Stores the notified value. */
+					   portMAX_DELAY);
 
-		if (xResult != pdTRUE){
-			debug("uart_task: eror on xTaskNotifyWait\r\n");
+		debug("Topic Received\n");
+
+		while(xQueueReceive(command_queue, (void *)&rx_data, 0) == pdTRUE){
+
+			printf("%d   %d\n", rx_data.cmd, rx_data.data);
+
+
 		}
 
-#ifdef DEBUG_MSGS
-		printf("got uart message\r\n");
-#endif
 
-		while(xQueueReceive(tx_queue, (void *)pkg, 0) ==
-		                  pdTRUE){
-		 	/* Send a package */
-			makeAndSend(pkg, pkg[1]);
-			retries = 30;
-			size = 0;
-
-			/* Wait for response: at least 2 bytes (header) */
-			while (size < 2 && (retries)){
-				vTaskDelay( 200 / portTICK_PERIOD_MS );
-				size = uart_rxfifo_size(0);
-				retries--;
-			}
-
-			/* No response, try to send again */
-			if (!retries){
-				vTaskDelay( 2000 / portTICK_PERIOD_MS );
-				uart_flush_rxfifo(0);
-				debug("Uart task: no response\n\r");
-				break;
-			}
-
-			/* Get received data */
-			for (i=0; (i < 2) & (i < PKG_MAX_SIZE); i++)
-				pkg[i] = uart_getc_nowait(0);
-
-			/* Check for a valid start byte */
-			if (pkg[0] != PKG_START){
-				 taskYIELD();
-				 //continue;
-				 break;
-			}
-
-			/* Get remaining data: data and checksum  */
-			size = (pkg[1] < PKG_MAX_SIZE) ? (pkg[1] + 1) : (PKG_MAX_SIZE - 1);
-			size = uart_rxfifo_wait(0, size);
-
-			for (i=0; i < size; i++)
-				pkg[i+2] = uart_getc_nowait(0);
-
-#ifdef DEBUG_MSGS
-			for (i=0; i < size + PKG_HEADER_SIZE; i++)
-				printf("%x ", pkg[i]);
-
-			printf("\r\n");
-#endif
-
-			/* Send to parser task */
-			if (xQueueSend(rx_queue, (void *)pkg, 0) == pdFALSE) {
-				debug("rx_queue queue overflow.\r\n");
-			}
-			/* Unblock parser task */
-			xTaskNotify( xHandlingPkgTask, 0, eNoAction );
-		}
 	}
-}
-
-void pkgParser_task(void *pvParameters)
-{
-	uint8_t pkg[PKG_MAX_SIZE];
-
-    BaseType_t xResult;
-    uint32_t ulNotifiedValue;
-
-    uint8_t i;
-    uint16_t currentData;
-
-    while (1) {
-
-    	xResult = xTaskNotifyWait( pdFALSE,          /* Don't clear bits on entry. */
-								ULONG_MAX,       	 /* Clear all bits on exit. */
-							   &ulNotifiedValue, 	 /* Stores the notified value. */
-							   portMAX_DELAY);
-
-    	if (xResult != pdTRUE){
-    		printf("pkgParser_task: eror on xTaskNotifyWait \r\n");
-    	}
-
-#ifdef DEBUG_MSGS
-    	printf("pkgParser_task\r\n");
-#endif
-
-   	    while(xQueueReceive(rx_queue, (void *)pkg, 0) == pdTRUE){
 
 
-   	    	switch (pkg[2]) {
-				case SERVO_ACK_CMD:
-#ifdef DEBUG_MSGS
-					printf("PWM ack: %u %u\n", pkg[3], pkg[4]);
-#endif
-					break;
-				case ADC_DATA:
 
-					break;
 
-				case ADC_ACK_CMD:
-					for (i=0; i < N_MOTORS*2; i+=2) {
-						  currentData = (uint8_t) pkg[3+i] << 8 | (uint8_t)pkg[4+i];
-					  	  setCurrent(currentData, i/2);
-					}
-					break;
-
-				default:
-					break;
-			}
-   	    }
-    }
 }
 
 

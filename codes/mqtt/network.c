@@ -27,7 +27,6 @@
 
 #include "network.h"
 #include "comm.h"
-#include "motors.h"
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
@@ -36,15 +35,43 @@
 #define MQTT_USER NULL
 #define MQTT_PASS NULL
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
-#define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)
+#define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
 #else
 #define debug(fmt, ...)
 #endif
 
 QueueHandle_t publish_queue;
+QueueHandle_t command_queue;
+
+char cfg_topics[CFG_TOPICS][PUB_TPC_LEN];
+
+
+void init_mqtt_topics(){
+
+	char *wifi_my_host_name = NULL;
+	char *default_host_name = "host_1";
+
+	/* Get MQTT host IP from web server configuration */
+	sysparam_get_string("hostname", &wifi_my_host_name);
+
+	if (!wifi_my_host_name){
+		debug("init_mqtt_topics: Invalid host name\n");
+		wifi_my_host_name = default_host_name;
+	}
+	else {
+		for (int i=0; i < CFG_TOPICS; i++) {
+			snprintf(cfg_topics[i], PUB_TPC_LEN, "%s/cfg/%d", wifi_my_host_name,i);
+			debug("%s\n", cfg_topics[i]);
+		}
+	}
+
+	if (wifi_my_host_name)
+		free(wifi_my_host_name);
+
+}
 
 static const char *  get_my_id(void)
 {
@@ -71,19 +98,40 @@ static const char *  get_my_id(void)
     return my_id;
 }
 
-static void  topic_received(mqtt_message_data_t *md)
+static void topic_received(mqtt_message_data_t *md)
 {
+    int size;
+	mqtt_message_t *message = md->message;
+	command_data_t rx_data;
+
+#ifdef DEBUG
     int i;
-    mqtt_message_t *message = md->message;
-    printf("Received: ");
+    debug("Received: ");
     for( i = 0; i < md->topic->lenstring.len; ++i)
-        printf("%c", md->topic->lenstring.data[ i ]);
-
-    printf(" = ");
+    	debug("%c", md->topic->lenstring.data[ i ]);
+    debug(" = ");
     for( i = 0; i < (int)message->payloadlen; ++i)
-        printf("%c", ((char *)(message->payload))[i]);
+    	debug("%c", ((char *)(message->payload))[i]);
+    debug("\r\n");
+#endif
 
-    printf("\r\n");
+    /* Convert message data to numeric data    *
+     * Command type from last char from topic  */
+    size = md->topic->lenstring.len;
+    rx_data.cmd = md->topic->lenstring.data[size-1] - '0';
+
+    /* Ensure string termination  */
+    size = message->payloadlen;
+    ((char *)(message->payload))[size] = 0;
+    /* Convert string to int */
+    rx_data.data = atoi((char *)(message->payload));
+
+    /* Enqueue data and unblock task */
+    if (xQueueSend(command_queue, (void *)&rx_data, 0) == pdFALSE)
+		debug("rx_queue queue overflow.\r\n");
+
+    xTaskNotify(xHandling_485_cmd_task, 0, eNoAction);
+
 }
 
 
@@ -103,6 +151,8 @@ void  mqtt_task(void *pvParameters)
     strcpy(mqtt_client_id, "ESP-");
     strcat(mqtt_client_id, get_my_id());
 
+    init_mqtt_topics();
+
     while(1) {
 		char *wifi_mqtt_ip_addr = NULL;
 
@@ -110,22 +160,22 @@ void  mqtt_task(void *pvParameters)
     	sysparam_get_string("wifi_mqtt_ip_addr", &wifi_mqtt_ip_addr);
 
     	if (wifi_mqtt_ip_addr) {
-			printf("My mqtt server is: %s\n", wifi_mqtt_ip_addr);
-			printf("%s: started\n\r", __func__);
-			printf("%s: (Re)connecting to MQTT server %s ... ",__func__,
+    		debug("My mqtt server is: %s\n", wifi_mqtt_ip_addr);
+    		debug("%s: started\n\r", __func__);
+    		debug("%s: (Re)connecting to MQTT server %s ... ",__func__,
 					wifi_mqtt_ip_addr);
 
     	}
     	else {
-    		printf("%s: MQTT server configuration is invalid.\n",__func__);
-    		printf("Retry in 10s\n\r");
+    		debug("%s: MQTT server configuration is invalid.\n",__func__);
+    		debug("Retry in 10s\n\r");
 			vTaskDelay(10000 / portTICK_PERIOD_MS);
     		continue;
     	}
 
         ret = mqtt_network_connect(&network, wifi_mqtt_ip_addr, MQTT_PORT);
         if( ret ){
-            printf("error: %d. Retry in 10s\n\r", ret);
+        	debug("error: %d. Retry in 10s\n\r", ret);
             vTaskDelay(10000 / portTICK_PERIOD_MS);
             continue;
         }
@@ -143,36 +193,30 @@ void  mqtt_task(void *pvParameters)
 
         ret = mqtt_connect(&client, &data);
         if(ret){
-            printf("mqtt_connect error: %d\n\r", ret);
+        	debug("mqtt_connect error: %d\n\r", ret);
             mqtt_network_disconnect(&network);
             taskYIELD();
             continue;
         }
-        printf("done\r\n");
-        //mqtt_subscribe(&client, "/esptopic", MQTT_QOS1, topic_received);
 
         /* Subscribe to control topics *
 		* #define MQTT_MAX_MESSAGE_HANDLERS in paho_mqtt_c/MQTTClient.h changed to 8  *
 		* Default of only 5 handlers */
-//        for (int i=0; i < NTOPICS; i++){
-//			ret =  mqtt_subscribe(&client, moveTopcis[i], MQTT_QOS1, move_servo);
-//
-//			if (ret != MQTT_SUCCESS)
-//				printf("Error on subscription: %d -> %d\n\n", i, ret);
-//		   }
-	    printf("Subscription ... done\r\n");
+        for (int i=0; i < CFG_TOPICS; i++){
+        	ret =  mqtt_subscribe(&client, cfg_topics[i], MQTT_QOS1, topic_received);
+
+        	if (ret != MQTT_SUCCESS)
+				debug("Error on subscription: %d -> %d\n\n", i, ret);
+		}
+
+        debug("Subscription ... done\r\n");
 
         xQueueReset(publish_queue);
 
         while(1){
-
-            //char msg[PUB_MSG_LEN - 1] = "\0";
-
         	publisher_data_t to_publish;
 
-            while(xQueueReceive(publish_queue, (void *)&to_publish, 0) ==
-                  pdTRUE){
-                //printf("got message to publish\r\n");
+            while(xQueueReceive(publish_queue, (void *)&to_publish, 0) == pdTRUE){
                 mqtt_message_t message;
                 message.payload = to_publish.data;
                 message.payloadlen = PUB_MSG_LEN;

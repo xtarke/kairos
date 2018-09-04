@@ -11,15 +11,15 @@
 #include <stdint.h>
 #include "esp/uart.h"
 
-extern TaskHandle_t xHandlingUartTask;
-extern TaskHandle_t xHandlingPkgTask;
-
-extern QueueHandle_t tx_queue;
-extern QueueHandle_t rx_queue;
+typedef struct command_data{
+	uint8_t cmd;
+	int data;
+} command_data_t;
 
 void  status_task(void *pvParameters);
-void  pkgParser_task(void *pvParameters);
-void  uart_task(void *pvParameters);
+void commands_task(void *pvParameters);
+extern TaskHandle_t xHandling_485_cmd_task;
+
 
 enum PKG_DEF {PKG_START = 0x7E, PKG_MAX_SIZE = 24, PKG_HEADER_SIZE = 2, PKG_INFO_SIZE = 3};
 enum PKG_TYPE {PWM_DATA = 0x01, ADC_DATA = 0x11, ADC_ALL_DATA = 0x13};
