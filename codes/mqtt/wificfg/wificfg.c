@@ -2140,6 +2140,8 @@ void wificfg_init(uint32_t port, const wificfg_dispatch *dispatch)
         int8_t wifi_sta_dhcp = 1;
         sysparam_get_int8("wifi_sta_dhcp", &wifi_sta_dhcp);
 
+        //printf("TESTE: %d  %d %d\n", wifi_sta_enable, wifi_ap_enable,wifi_sta_dhcp);
+
         if (!wifi_sta_dhcp) {
             char *wifi_sta_ip_addr = NULL;
             char *wifi_sta_netmask = NULL;

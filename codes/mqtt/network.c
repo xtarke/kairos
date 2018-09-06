@@ -36,7 +36,7 @@
 #define MQTT_USER NULL
 #define MQTT_PASS NULL
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
@@ -138,7 +138,6 @@ static void topic_received(mqtt_message_data_t *md)
 		debug("rx_queue queue overflow.\r\n");
 
     xTaskNotify(xHandling_485_cmd_task, 0, eNoAction);
-
 }
 
 

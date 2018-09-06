@@ -23,35 +23,37 @@ void app_status_init(){
 }
 
 void set_temperature(uint16_t temp){
-	 xSemaphoreTake(sys_data_mutex, portMAX_DELAY);
-	 sys_status.temperature = temp;
-	 xSemaphoreGive(sys_data_mutex);
+  	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_status.temperature = temp;
+		xSemaphoreGive(sys_data_mutex);
+  	}
 }
 
 uint16_t get_temperature(){
+	uint16_t temp = 0;
 
-	uint16_t temp;
-
-	xSemaphoreTake(sys_data_mutex, portMAX_DELAY);
-	temp = sys_status.temperature;
-	xSemaphoreGive(sys_data_mutex);
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		temp = sys_status.temperature;
+		xSemaphoreGive(sys_data_mutex);
+	}
 
 	return temp;
 }
 
 void set_rs485_addr(uint8_t addr){
-	 xSemaphoreTake(sys_data_mutex, portMAX_DELAY);
-	 sys_status.rs485_addr = addr;
-	 xSemaphoreGive(sys_data_mutex);
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_status.rs485_addr = addr;
+		xSemaphoreGive(sys_data_mutex);
+	}
 }
 
 uint8_t get_rs485_addr(){
+	uint8_t addr = 0;
 
-	uint8_t addr;
-
-	xSemaphoreTake(sys_data_mutex, portMAX_DELAY);
-	addr = sys_status.rs485_addr;
-	xSemaphoreGive(sys_data_mutex);
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		addr = sys_status.rs485_addr;
+		xSemaphoreGive(sys_data_mutex);
+	}
 
 	return addr;
 }

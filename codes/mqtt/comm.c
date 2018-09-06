@@ -21,10 +21,10 @@
 #include "network.h"
 #include "app_status.h"
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
-#define debug(fmt, ...) printf("%s: " fmt "\n", "PWM", ## __VA_ARGS__)
+#define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
 #else
 #define debug(fmt, ...)
 #endif
@@ -51,7 +51,6 @@ void comm_init(){
 static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 	uint8_t i = 0;
 
-	 xSemaphoreTake(rs485_data_mutex, portMAX_DELAY);
 	/* Assert GPIO TX ENABLE PIN */
 	GPIO.OUT_SET = BIT(TX_EN_PIN);
 	/* Copy data to CPU TX Fifo */
@@ -62,14 +61,13 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 	uart_flush_txfifo(0);
 	/* Release RS485 Line */
 	GPIO.OUT_CLEAR = BIT(TX_EN_PIN);
-	xSemaphoreGive(rs485_data_mutex);
+
 }
 
-static uint8_t receive_data_rs485(uint8_t *rx_pkg, uint8_t packet_size){
+static uint8_t receive_data_rs485(uint8_t *rx_pkg, uint8_t packet_size, uint16_t timeout){
 
 	uint8_t error = 0;
 	TickType_t my_time;
-
 
 	my_time = xTaskGetTickCount();
 	/* Get received data */
@@ -82,17 +80,14 @@ static uint8_t receive_data_rs485(uint8_t *rx_pkg, uint8_t packet_size){
 			continue;
 		}
 		/* Timeout */
-		if (xTaskGetTickCount() > (my_time + 50)){
-			puts("No RS485 response");
+		if (xTaskGetTickCount() > (my_time + timeout)){
 			error = 1;
 			break;
 		}
 	}
 
 	return error;
-
 }
-
 
 /**
   * @brief  CRC 16 calculation.
@@ -125,9 +120,8 @@ uint16_t CRC16_2(uint8_t *buf, int len)
 
 void status_task(void *pvParameters)
 {
-    TickType_t my_time;
     uint16_t temperature, crc16;
-    uint8_t i, error = 0;
+    uint8_t error = 0;
     uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
     memset(rx_pkg, 0, sizeof(rx_pkg));
@@ -144,10 +138,18 @@ void status_task(void *pvParameters)
        	pkg[2] = crc16 & 0x00ff;
        	pkg[3] = (crc16 >> 8);
 
-       	send_data_rs485(pkg,5);
-        my_time = xTaskGetTickCount();
-        error = receive_data_rs485(rx_pkg, 13);
+       	if( xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ) {
+			send_data_rs485(pkg,5);
+			error = receive_data_rs485(rx_pkg, 13, 50);
+			xSemaphoreGive(rs485_data_mutex);
+		}
+       	else
+       		error = 2;
 
+    	/* Check CRC from received package */
+		crc16 = CRC16_2(rx_pkg,11);
+		if (rx_pkg[12] != (crc16 >> 8) || rx_pkg[11] != (crc16 & 0xff))
+			error = 3;
 
 		if (!error) {
 #ifdef DEBUGG
@@ -155,27 +157,24 @@ void status_task(void *pvParameters)
 				printf("%x-", rx_pkg[i]);
 			puts("");
 #endif
-
 			temperature = (rx_pkg[3] << 8) | rx_pkg[4];
-
-			printf("%d.%d\n", temperature/10, temperature % 10);
-			printf("CRC: %x\n", CRC16_2(pkg,2));
-
+			debug("%d.%d\n", temperature/10, temperature % 10);
 			set_temperature(temperature);
-		}
+		}else
+			printf("status error: %d\n", error);
     }
 }
 
 
 void commands_task(void *pvParameters){
-
-	BaseType_t xResult;
 	uint32_t ulNotifiedValue;
-
+	uint16_t crc16;
+	uint8_t pkg[] = {0x07, 0x06, 0x00, 0x0f, 0x00, 0x00, 0xcc, 0xcc, 0xff};
+	uint8_t rx_pkg[16] = {0}, error;
 	command_data_t rx_data;
 
 	while (1){
-		xTaskNotifyWait( pdFALSE,          /* Don't clear bits on entry. */
+		xTaskNotifyWait(pdFALSE,        /* Don't clear bits on entry. */
 					   ULONG_MAX,        /* Clear all bits on exit. */
 					   &ulNotifiedValue, /* Stores the notified value. */
 					   portMAX_DELAY);
@@ -183,41 +182,31 @@ void commands_task(void *pvParameters){
 		debug("Topic Received\n");
 
 		while(xQueueReceive(command_queue, (void *)&rx_data, 0) == pdTRUE){
+			error = 0;
 
-			printf("%d   %d\n", rx_data.cmd, rx_data.data);
+			/* Create a temperature set-point package */
+		  	pkg[0] = get_rs485_addr();
+			pkg[5] = rx_data.data & 0x00ff;
+			pkg[4] = rx_data.data >> 8;
+			crc16 = CRC16_2(pkg,6);
+			pkg[6] = crc16 & 0x00ff;
+			pkg[7] = (crc16 >> 8);
 
+		  	if (xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ){
+				send_data_rs485(pkg,9);
+				error = receive_data_rs485(rx_pkg, 7, 50);
+				xSemaphoreGive(rs485_data_mutex);
+		  	} else
+		  		error = 2;
 
+		  	/* Check CRC from received package */
+		  	crc16 = CRC16_2(rx_pkg,5);
+		  	if (rx_pkg[6] != (crc16 >> 8) || rx_pkg[5] != (crc16 & 0xff))
+		  		error = 3;
+
+		  	if (error) {
+				printf("temperature set-point error: %d\n", error);
+		  	}
 		}
-
-
 	}
-
-
-
-
-}
-
-
-
-void makePkg(uint8_t *data, uint8_t paylodsize){
-	uint8_t checksum = 0xff;
-
-	/* Checksum */
-	for (uint8_t i = 0; i < paylodsize; i++){
-		checksum-= data[i + PKG_HEADER_SIZE];
-	}
-
-	data[0] = PKG_START;
-	data[1] = paylodsize;
-	data[PKG_HEADER_SIZE + paylodsize] = checksum;
-}
-
-
-void makeAndSend(uint8_t *data, uint8_t paylodsize) {
-	/* Make pkg */
-	makePkg(data, paylodsize);
-
-	/* Send it */
-	/* Size: Header + payload + checksum */
-	//send_data(data, PKG_HEADER_SIZE + paylodsize + 1);
 }

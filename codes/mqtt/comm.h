@@ -13,7 +13,7 @@
 
 typedef struct command_data{
 	uint8_t cmd;
-	int data;
+	uint16_t data;
 } command_data_t;
 
 void status_task(void *pvParameters);

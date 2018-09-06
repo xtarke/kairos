@@ -37,12 +37,14 @@ uint16_t CRC16_2(uint8_t *buf, int len)
 
 int main(void) {
 
-	uint8_t pkg_0[] = {0x07, 0x1e, 0x83, 0x88, 0xff};
+	// 7- 6- 2- 1-5e
+
+	uint8_t pkg_0[] = {0x07, 0x06, 0x02, 0x01, 0x5e};
 	uint8_t pkg_1[] = {0x08, 0x1e, 0x83, 0x88, 0xff};
 	uint8_t pkg_2[] = {0x08, 0x1e, 0x08, 0x00, 0xda, 0x7f, 0xff, 0x01, 0x18, 0x01, 0x00};
 	uint8_t pkg_3[] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
-	printf("CRC pkg[%d]: %x\n", 0, CRC16_2(pkg_0,2));
+	printf("CRC pkg[%d]: %x\n", 0, CRC16_2(pkg_0,5));
 	printf("CRC pkg[%d]: %x\n", 1, CRC16_2(pkg_1,2));
 	printf("CRC pkg[%d]: %x\n", 2, CRC16_2(pkg_2,sizeof(pkg_2)));
 
