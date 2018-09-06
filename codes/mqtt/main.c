@@ -20,6 +20,7 @@
 #include "comm.h"
 
 #include "sysparam.h"
+#include "app_status.h"
 
 // #define DEBUG
 
@@ -29,12 +30,11 @@
 #define debug(fmt, ...)
 #endif
 
-extern uint16_t temperature;
-
 
 static void  status_publish_task(void *pvParameters)
 {
-    TickType_t xLastWakeTime = xTaskGetTickCount();
+    uint16_t temperature;
+	TickType_t xLastWakeTime = xTaskGetTickCount();
 
     publisher_data_t to_publish;
 
@@ -55,6 +55,8 @@ static void  status_publish_task(void *pvParameters)
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 3000 / portTICK_PERIOD_MS);
+
+        temperature = get_temperature();
 
         snprintf(to_publish.data, PUB_MSG_LEN, "%d.%d", temperature/10, temperature%10);
 
@@ -92,6 +94,9 @@ void user_init(void)
     command_queue = xQueueCreate(4, sizeof(command_data_t));
 
     wifi_cfg();
+
+    app_status_init();
+    comm_init();
 
     // xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
     //xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);

@@ -27,6 +27,7 @@
 
 #include "network.h"
 #include "comm.h"
+#include "app_status.h"
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
@@ -125,6 +126,12 @@ static void topic_received(mqtt_message_data_t *md)
     ((char *)(message->payload))[size] = 0;
     /* Convert string to int */
     rx_data.data = atoi((char *)(message->payload));
+
+    /* New rs485 address: set it and return immediately */
+    if (rx_data.cmd == 0) {
+    	set_rs485_addr((uint8_t)rx_data.data);
+    	return;
+    }
 
     /* Enqueue data and unblock task */
     if (xQueueSend(command_queue, (void *)&rx_data, 0) == pdFALSE)

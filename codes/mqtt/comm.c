@@ -19,6 +19,7 @@
 
 #include "sysparam.h"
 #include "network.h"
+#include "app_status.h"
 
 #define DEBUG
 
@@ -32,8 +33,12 @@
 #define RS485_USART 0
 
 TaskHandle_t xHandling_485_cmd_task;
+SemaphoreHandle_t rs485_data_mutex;
 
-volatile uint16_t temperature = 0;
+
+void comm_init(){
+	vSemaphoreCreateBinary(rs485_data_mutex);
+}
 
 
 /**
@@ -46,6 +51,7 @@ volatile uint16_t temperature = 0;
 static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 	uint8_t i = 0;
 
+	 xSemaphoreTake(rs485_data_mutex, portMAX_DELAY);
 	/* Assert GPIO TX ENABLE PIN */
 	GPIO.OUT_SET = BIT(TX_EN_PIN);
 	/* Copy data to CPU TX Fifo */
@@ -56,6 +62,35 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 	uart_flush_txfifo(0);
 	/* Release RS485 Line */
 	GPIO.OUT_CLEAR = BIT(TX_EN_PIN);
+	xSemaphoreGive(rs485_data_mutex);
+}
+
+static uint8_t receive_data_rs485(uint8_t *rx_pkg, uint8_t packet_size){
+
+	uint8_t error = 0;
+	TickType_t my_time;
+
+
+	my_time = xTaskGetTickCount();
+	/* Get received data */
+	for (int i=0; (i < packet_size);) {
+		int data = uart_getc_nowait(0);
+
+		if (data != -1){
+			rx_pkg[i] = data;
+			i++;
+			continue;
+		}
+		/* Timeout */
+		if (xTaskGetTickCount() > (my_time + 50)){
+			puts("No RS485 response");
+			error = 1;
+			break;
+		}
+	}
+
+	return error;
+
 }
 
 
@@ -91,10 +126,11 @@ uint16_t CRC16_2(uint8_t *buf, int len)
 void status_task(void *pvParameters)
 {
     TickType_t my_time;
+    uint16_t temperature, crc16;
     uint8_t i, error = 0;
     uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
-    memset(rx_pkg,0, sizeof(rx_pkg));
+    memset(rx_pkg, 0, sizeof(rx_pkg));
 
     /* Enable GPIO for 485 transceiver */
     gpio_enable(TX_EN_PIN, GPIO_OUTPUT);
@@ -102,26 +138,16 @@ void status_task(void *pvParameters)
     while (1) {
        	vTaskDelay(1000 / portTICK_PERIOD_MS);
 
+       	/* Update pkg address and CRC */
+       	pkg[0] = get_rs485_addr();
+       	crc16 = CRC16_2(pkg,2);
+       	pkg[2] = crc16 & 0x00ff;
+       	pkg[3] = (crc16 >> 8);
+
        	send_data_rs485(pkg,5);
         my_time = xTaskGetTickCount();
-        error = 0;
+        error = receive_data_rs485(rx_pkg, 13);
 
-		/* Get received data */
-		for (i=0; (i < 13);) {
-			int data = uart_getc_nowait(0);
-
-			if (data != -1){
-				rx_pkg[i] = data;
-				i++;
-				continue;
-			}
-			/* Timeout */
-			if (xTaskGetTickCount() > (my_time + 50)){
-				puts("No RS485 response");
-				error = 1;
-				break;
-			}
-		}
 
 		if (!error) {
 #ifdef DEBUGG
@@ -131,8 +157,11 @@ void status_task(void *pvParameters)
 #endif
 
 			temperature = (rx_pkg[3] << 8) | rx_pkg[4];
+
 			printf("%d.%d\n", temperature/10, temperature % 10);
 			printf("CRC: %x\n", CRC16_2(pkg,2));
+
+			set_temperature(temperature);
 		}
     }
 }

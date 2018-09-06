@@ -16,9 +16,12 @@ typedef struct command_data{
 	int data;
 } command_data_t;
 
-void  status_task(void *pvParameters);
+void status_task(void *pvParameters);
 void commands_task(void *pvParameters);
+
 extern TaskHandle_t xHandling_485_cmd_task;
+
+void comm_init();
 
 
 enum PKG_DEF {PKG_START = 0x7E, PKG_MAX_SIZE = 24, PKG_HEADER_SIZE = 2, PKG_INFO_SIZE = 3};
