@@ -93,15 +93,17 @@ void user_init(void)
     publish_queue = xQueueCreate(8, sizeof(publisher_data_t));
     command_queue = xQueueCreate(4, sizeof(command_data_t));
 
+    printf("1\n");
+
     wifi_cfg();
 
     app_status_init();
     comm_init();
 
-    // xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
-    //xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);
+    printf("2\n");
 
-    //xTaskCreate(&uart_task, "uart_task", 256, NULL, 3, &xHandlingUartTask);
+    // xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
+    xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);
 
     xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
     xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);
