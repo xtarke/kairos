@@ -25,6 +25,7 @@ extern QueueHandle_t publish_queue;
 extern QueueHandle_t command_queue;
 
 void  mqtt_task(void *pvParameters);
+void wifi_cfg();
 
 
 #endif /* NETWORK_H_ */

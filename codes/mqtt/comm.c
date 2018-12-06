@@ -63,7 +63,15 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 	GPIO.OUT_CLEAR = BIT(TX_EN_PIN);
 
 }
-
+/**
+  * @brief Receive data from RS 485
+  * @param rx_pkg: pointer to write received data
+  * @param packet_size: expected packet size
+  * @param timeout: ticks to retry
+  *
+  *
+  * @retval uint8_t: 0 if OK, 1 if error
+  */
 static uint8_t receive_data_rs485(uint8_t *rx_pkg, uint8_t packet_size, uint16_t timeout){
 
 	uint8_t error = 0;
@@ -161,7 +169,7 @@ void status_task(void *pvParameters)
 			debug("%d.%d\n", temperature/10, temperature % 10);
 			set_temperature(temperature);
 		}else
-			printf("status error: %d\n", error);
+			debug("status error: %d\n", error);
     }
 }
 
@@ -193,8 +201,8 @@ void commands_task(void *pvParameters){
 			pkg[7] = (crc16 >> 8);
 
 		  	if (xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ){
-				send_data_rs485(pkg,9);
-				error = receive_data_rs485(rx_pkg, 7, 50);
+				//send_data_rs485(pkg,9);
+				//error = receive_data_rs485(rx_pkg, 7, 50);
 				xSemaphoreGive(rs485_data_mutex);
 		  	} else
 		  		error = 2;
