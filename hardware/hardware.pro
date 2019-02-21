@@ -1,4 +1,4 @@
-update=qui 06 dez 2018 15:58:49 -02
+update=Tue 19 Feb 2019 01:06:11 PM -03
 version=1
 last_client=kicad
 [pcbnew]
@@ -60,3 +60,13 @@ LibName28=atmel
 LibName29=contrib
 LibName30=valves
 LibName31=/home/xtarke/Projects/kairos/d1_mini_kicad/library/wemos_mini
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=
+SpiceForceRefPrefix=0
+SpiceUseNetNumbers=0
+LabSize=60
