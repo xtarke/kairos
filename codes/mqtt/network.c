@@ -136,7 +136,7 @@ static void topic_received(mqtt_message_data_t *md)
 
     /* New rs485 address: set it and return immediately */
     if (rx_data.cmd == 0) {
-    	set_rs485_addr((uint8_t)rx_data.data);
+    	set_rs485_addr(0, (uint8_t)rx_data.data);
     	return;
     }
 

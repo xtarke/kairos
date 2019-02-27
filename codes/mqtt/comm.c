@@ -140,36 +140,46 @@ void status_task(void *pvParameters)
     while (1) {
        	vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-       	/* Update pkg address and CRC */
-       	pkg[0] = get_rs485_addr();
-       	crc16 = CRC16_2(pkg,2);
-       	pkg[2] = crc16 & 0x00ff;
-       	pkg[3] = (crc16 >> 8);
+       	for (int i=0; i < MAX_485_SENSORS; i++){
+       		error = 0;
+       		if (get_enable(i)) {
 
-       	if( xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ) {
-			send_data_rs485(pkg,5);
-			error = receive_data_rs485(rx_pkg, 13, 50);
-			xSemaphoreGive(rs485_data_mutex);
-		}
-       	else
-       		error = 2;
+				/* Update pkg address and CRC */
+				pkg[0] = get_rs485_addr(i);
+				crc16 = CRC16_2(pkg,2);
+				pkg[2] = crc16 & 0x00ff;
+				pkg[3] = (crc16 >> 8);
 
-    	/* Check CRC from received package */
-		crc16 = CRC16_2(rx_pkg,11);
-		if (rx_pkg[12] != (crc16 >> 8) || rx_pkg[11] != (crc16 & 0xff))
-			error = 3;
+				if( xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ) {
+					send_data_rs485(pkg,5);
+					error = receive_data_rs485(rx_pkg, 13, 50);
+					xSemaphoreGive(rs485_data_mutex);
+				}
+				else
+					error = 2;
 
-		if (!error) {
-#ifdef DEBUGG
-			for (i=0; i < 13; i++)
-				printf("%x-", rx_pkg[i]);
-			puts("");
-#endif
-			temperature = (rx_pkg[3] << 8) | rx_pkg[4];
-			debug("%d.%d\n", temperature/10, temperature % 10);
-			set_temperature(temperature);
-		}else
-			debug("status error: %d\n", error);
+				/* Check CRC from received package */
+				crc16 = CRC16_2(rx_pkg,11);
+				if (rx_pkg[12] != (crc16 >> 8) || rx_pkg[11] != (crc16 & 0xff))
+					error = 3;
+
+				if (!error) {
+		#ifdef DEBUGG
+					for (i=0; i < 13; i++)
+						printf("%x-", rx_pkg[i]);
+					puts("");
+		#endif
+					temperature = (rx_pkg[3] << 8) | rx_pkg[4];
+					debug("%d.%d\n", temperature/10, temperature % 10);
+					set_temperature(temperature, i);
+				}else
+					debug("status error: %d\n", error);
+
+				set_error(i, error);
+
+				vTaskDelay(100 / portTICK_PERIOD_MS);
+       		}
+       	}
     }
 }
 
@@ -193,7 +203,7 @@ void commands_task(void *pvParameters){
 			error = 0;
 
 			/* Create a temperature set-point package */
-		  	pkg[0] = get_rs485_addr();
+		  	pkg[0] = get_rs485_addr(0);
 			pkg[5] = rx_data.data & 0x00ff;
 			pkg[4] = rx_data.data >> 8;
 			crc16 = CRC16_2(pkg,6);

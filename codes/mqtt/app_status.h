@@ -8,14 +8,22 @@
 #ifndef APP_STATUS_H_
 #define APP_STATUS_H_
 
+#define MAX_485_SENSORS 4
+
 void app_status_init();
 
-void set_temperature(uint16_t temp);
-uint16_t get_temperature();
+void set_temperature(int16_t temp, uint8_t i);
+int16_t get_temperature(uint8_t i);
 
-uint8_t get_rs485_addr();
-void set_rs485_addr(uint8_t addr);
+uint8_t get_rs485_addr(uint8_t i);
+void set_rs485_addr(uint8_t i, uint8_t addr);
+
+void unset_enable(uint8_t i);
+void set_enable(uint8_t i);
+uint8_t get_enable(uint8_t i);
 
 
+void set_error(uint8_t i, uint8_t error);
+uint8_t get_error(uint8_t i);
 
 #endif /* APP_STATUS_H_ */

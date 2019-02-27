@@ -33,10 +33,16 @@
 
 static void  status_publish_task(void *pvParameters)
 {
-    uint16_t temperature;
+	int len;
+	int16_t temperature;
+	uint8_t error;
 	TickType_t xLastWakeTime = xTaskGetTickCount();
 
-    publisher_data_t to_publish;
+    publisher_data_t to_publish_data;
+    publisher_data_t to_publish_error;
+
+    memset(&to_publish_error, 0, sizeof(to_publish_error));
+    memset(&to_publish_data, 0, sizeof(to_publish_data));
 
     char *wifi_my_host_name = NULL;
 
@@ -45,23 +51,42 @@ static void  status_publish_task(void *pvParameters)
 
 	if (!wifi_my_host_name){
 		printf("Invalid host name\n");
-		strncpy(to_publish.topic,"host_1/temperatura",PUB_TPC_LEN);
+		strncpy(to_publish_data.topic,"host_1/temperatura/",PUB_TPC_LEN);
+		strncpy(to_publish_error.topic,"host_1/erro/",PUB_TPC_LEN);
 	}
 	else {
-		strncpy(to_publish.topic, wifi_my_host_name,PUB_TPC_LEN);
+		strncpy(to_publish_data.topic, wifi_my_host_name,PUB_TPC_LEN);
+		strncpy(to_publish_error.topic, wifi_my_host_name,PUB_TPC_LEN);
 		free(wifi_my_host_name);
-		strncat(to_publish.topic,"/temperatura",PUB_TPC_LEN);
+		strncat(to_publish_data.topic,"/temperatura/0",PUB_TPC_LEN);
+		strncat(to_publish_error.topic,"/erro/0",PUB_TPC_LEN);
 	}
+
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 3000 / portTICK_PERIOD_MS);
 
-        temperature = get_temperature();
+        for (int i=0; i < MAX_485_SENSORS; i++){
 
-        snprintf(to_publish.data, PUB_MSG_LEN, "%d.%d", temperature/10, temperature%10);
+        	if (get_enable(i)) {
+        		len = strnlen(to_publish_data.topic, PUB_TPC_LEN);
+        		to_publish_data.topic[len-1] = '0' + i;
+        		len = strnlen(to_publish_error.topic, PUB_TPC_LEN);
+        		to_publish_error.topic[len-1] = '0' + i;
 
-        if (xQueueSend(publish_queue, (void *)&to_publish, 0) == pdFALSE) {
-        	debug("Publish queue overflow.\r\n");
+        		error = get_error(i);
+        		temperature = get_temperature(i);
+
+				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d", temperature/10, temperature%10);
+				snprintf(to_publish_error.data, PUB_MSG_LEN, "%d", error);
+
+				if (xQueueSend(publish_queue, (void *)&to_publish_data, 0) == pdFALSE) {
+					debug("Publish queue overflow.\r\n");
+				}
+				if (xQueueSend(publish_queue, (void *)&to_publish_error, 0) == pdFALSE) {
+					debug("Publish queue overflow.\r\n");
+				}
+        	}
         }
     }
 }
@@ -89,7 +114,6 @@ void user_init(void)
 
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
-    //vSemaphoreCreateBinary(wifi_alive);
     publish_queue = xQueueCreate(8, sizeof(publisher_data_t));
     command_queue = xQueueCreate(4, sizeof(command_data_t));
 
@@ -98,12 +122,16 @@ void user_init(void)
     app_status_init();
     comm_init();
 
-    // xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
+    /* To Do:
+     *
+     * Get return of xTaskCreate.
+     *
+     */
     xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);
 
     xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
     xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);
 
-    xTaskCreate(&status_publish_task, "beat_task", 256, NULL, 6, NULL);
+    xTaskCreate(&status_publish_task, "status_publish_task", 512, NULL, 6, NULL);
     xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 7, NULL);
 }
