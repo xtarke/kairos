@@ -34,10 +34,9 @@
 static void  status_publish_task(void *pvParameters)
 {
 	int len;
-	int16_t temperature;
-	uint8_t error;
 	TickType_t xLastWakeTime = xTaskGetTickCount();
 
+	temperature_stauts_t myData = {0,0};
     publisher_data_t to_publish_data;
     publisher_data_t to_publish_error;
 
@@ -74,18 +73,19 @@ static void  status_publish_task(void *pvParameters)
         		len = strnlen(to_publish_error.topic, PUB_TPC_LEN);
         		to_publish_error.topic[len-1] = '0' + i;
 
-        		error = get_error(i);
-        		temperature = get_temperature(i);
+        		get_temperature(i, &myData);
+        		//error = get_error(i);
+        		//temperature = get_temperature(i);
 
-				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d", temperature/10, temperature%10);
-				snprintf(to_publish_error.data, PUB_MSG_LEN, "%d", error);
+				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d;%d", myData.temperature/10, myData.temperature%10,myData.error);
+				// snprintf(to_publish_error.data, PUB_MSG_LEN, "%d", myData.error);
 
 				if (xQueueSend(publish_queue, (void *)&to_publish_data, 0) == pdFALSE) {
 					debug("Publish queue overflow.\r\n");
 				}
-				if (xQueueSend(publish_queue, (void *)&to_publish_error, 0) == pdFALSE) {
-					debug("Publish queue overflow.\r\n");
-				}
+//				if (xQueueSend(publish_queue, (void *)&to_publish_error, 0) == pdFALSE) {
+//					debug("Publish queue overflow.\r\n");
+//				}
         	}
         }
     }
@@ -127,7 +127,7 @@ void user_init(void)
      * Get return of xTaskCreate.
      *
      */
-    xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);
+    // xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);
 
     xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
     xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);

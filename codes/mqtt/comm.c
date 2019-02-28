@@ -128,7 +128,7 @@ uint16_t CRC16_2(uint8_t *buf, int len)
 
 void status_task(void *pvParameters)
 {
-    uint16_t temperature, crc16;
+    uint16_t temperature = 0, crc16;
     uint8_t error = 0;
     uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
@@ -171,12 +171,11 @@ void status_task(void *pvParameters)
 		#endif
 					temperature = (rx_pkg[3] << 8) | rx_pkg[4];
 					debug("%d.%d\n", temperature/10, temperature % 10);
-					set_temperature(temperature, i);
 				}else
 					debug("status error: %d\n", error);
 
-				set_error(i, error);
-
+				/* Atomic set */
+				set_temperature(temperature, error, i);
 				vTaskDelay(100 / portTICK_PERIOD_MS);
        		}
        	}

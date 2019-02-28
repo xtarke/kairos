@@ -26,23 +26,26 @@ void app_status_init(){
 	vSemaphoreCreateBinary(sys_data_mutex);
 }
 
-void set_temperature(int16_t temp, uint8_t i){
+void set_temperature(int16_t temp, uint8_t error, uint8_t i){
   	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
-  		if (i < MAX_485_SENSORS)
+  		if (i < MAX_485_SENSORS){
   			sys_status[i].temperature = temp;
+  			sys_status[i].error = error;
+  		}
 		xSemaphoreGive(sys_data_mutex);
   	}
 }
 
-int16_t get_temperature(uint8_t i){
+void get_temperature(uint8_t i, temperature_stauts_t *t){
 	int16_t temp = -100;
 
 	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
-		if (i < MAX_485_SENSORS)
-			temp = sys_status[i].temperature;
+		if (i < MAX_485_SENSORS){
+			t->temperature = sys_status[i].temperature;
+			t->error = sys_status[i].error;
+		}
 		xSemaphoreGive(sys_data_mutex);
 	}
-
 	return temp;
 }
 
