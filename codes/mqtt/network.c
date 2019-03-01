@@ -202,7 +202,7 @@ void  mqtt_task(void *pvParameters)
             continue;
         }
 
-        mqtt_client_new(&client, &network, 5000, mqtt_buf, 100,
+        mqtt_client_new(&client, &network, 1000, mqtt_buf, 100,
                       mqtt_readbuf, 100);
 
         data.willFlag       = 0;

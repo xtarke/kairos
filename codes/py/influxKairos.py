@@ -47,12 +47,24 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    # client.subscribe("$SYS/#")  
+    # client.subscribe("$SYS/#")
+
+    client.subscribe('k2/temperatura')
+    logging.info('Subscribing to: ' + 'k2/temperatura')
+
+    client.subscribe('k58/temperatura/0')
+    logging.info('Subscribing to: ' + 'k58/temperatura/0')
+
+    client.subscribe('k58/temperatura/1')
+    logging.info('Subscribing to: ' + 'k58/temperatura/1')
 
 def on_disconnect(client, userdata, rc):
     if rc != 0:
         print('Unexpected disconnection: ' + str(rc) + ' ' + time.strftime('%Y-%m-%dT%H:%M:%S'))
         logging.warning('Unexpected disconnection: ' + str(rc) + ' ' + time.strftime('%Y-%m-%dT%H:%M:%S'))
+
+    # client.reconnect()
+        
         
 def on_message(client, userdata, message):
     #global temperature# = Data()
@@ -135,16 +147,6 @@ def main():
     mqttc.on_connect = on_connect
     mqttc.user_data_set(myData)
 
-    mqttc.subscribe('k2/temperatura')
-    logging.info('Subscribing to: ' + 'k2/temperatura')
-
-    mqttc.subscribe('k58/temperatura/0')
-    logging.info('Subscribing to: ' + 'k58/temperatura/0')
-
-    mqttc.subscribe('k58/temperatura/1')
-    logging.info('Subscribing to: ' + 'k58/temperatura/1')
-
-
     client = InfluxDBClient('localhost', 8086, options.DBuser, options.DBpassword)
     client.switch_database('kairos')
     
@@ -169,7 +171,7 @@ def main():
 
             for data in myData:
                 if (not (data.is_new(timestamp[i]))):
-                    print('Failed writing fresh data: ' + time.strftime('%Y-%m-%dT%H:%M:%S'))
+                    print('Failed writing fresh data:' + str(i) + ' ' + time.strftime('%Y-%m-%dT%H:%M:%S') )
                     logging.warning('Failed writing fresh data: ' + time.strftime('%Y-%m-%dT%H:%M:%S'))
                     data.set_error(9)
 
