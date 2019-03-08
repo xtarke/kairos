@@ -252,7 +252,7 @@ void  mqtt_task(void *pvParameters)
                 }
             }
 
-            ret = mqtt_yield(&client, 1000);
+            ret = mqtt_yield(&client, 3000);
             if (ret == MQTT_DISCONNECTED)
                 break;
         }

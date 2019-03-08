@@ -77,7 +77,12 @@ static void  status_publish_task(void *pvParameters)
         		//error = get_error(i);
         		//temperature = get_temperature(i);
 
-				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d;%d", myData.temperature/10, myData.temperature%10,myData.error);
+        		int fraction = myData.temperature % 10;
+        		if (fraction < 0)
+        			fraction = -fraction;
+
+
+				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d;%d", myData.temperature/10, fraction, myData.error);
 				// snprintf(to_publish_error.data, PUB_MSG_LEN, "%d", myData.error);
 
 				if (xQueueSend(publish_queue, (void *)&to_publish_data, 0) == pdFALSE) {

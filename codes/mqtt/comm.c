@@ -128,7 +128,7 @@ uint16_t CRC16_2(uint8_t *buf, int len)
 
 void status_task(void *pvParameters)
 {
-    uint16_t temperature = 0, crc16;
+    int16_t temperature = 0, crc16;
     uint8_t error = 0;
     uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
