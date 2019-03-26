@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name d1_mini_kicad)(type KiCad)(uri /home/xtarke/Projects/kairos/d1_mini_kicad)(options "")(descr ""))
+  (lib (name wemos_d1_mini)(type KiCad)(uri /home/xtarke/Projects/kairos/d1_mini_kicad/library/wemos_d1_mini.pretty)(options "")(descr ""))
+)

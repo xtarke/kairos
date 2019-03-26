@@ -21,7 +21,7 @@
 #include "network.h"
 #include "app_status.h"
 
-//#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
@@ -142,6 +142,7 @@ void status_task(void *pvParameters)
 
        	for (int i=0; i < MAX_485_SENSORS; i++){
        		error = 0;
+       		vTaskDelay(100 / portTICK_PERIOD_MS);
        		if (get_enable(i)) {
 
 				/* Update pkg address and CRC */
@@ -160,17 +161,15 @@ void status_task(void *pvParameters)
 
 				/* Check CRC from received package */
 				crc16 = CRC16_2(rx_pkg,11);
-				if (rx_pkg[12] != (crc16 >> 8) || rx_pkg[11] != (crc16 & 0xff))
+				if (rx_pkg[12] != (0xff & (crc16 >> 8)) || rx_pkg[11] != (crc16 & 0xff))
 					error = 3;
 
 				if (!error) {
 		#ifdef DEBUGG
-					for (i=0; i < 13; i++)
-						printf("%x-", rx_pkg[i]);
-					puts("");
+				for (i=0; i < 13; i++)
+					printf("%x-", rx_pkg[i]);
 		#endif
 					temperature = (rx_pkg[3] << 8) | rx_pkg[4];
-					debug("%d.%d\n", temperature/10, temperature % 10);
 				}else
 					debug("status error: %d\n", error);
 

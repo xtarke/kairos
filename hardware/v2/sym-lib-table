@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name hardware-rescue)(type Legacy)(uri ${KIPRJMOD}/hardware-rescue.lib)(options "")(descr ""))
+  (lib (name wemos_mini)(type Legacy)(uri /home/xtarke/Projects/kairos/d1_mini_kicad/library/wemos_mini.lib)(options "")(descr ""))
+)

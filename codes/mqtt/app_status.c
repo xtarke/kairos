@@ -106,7 +106,7 @@ void unset_enable(uint8_t i){
 }
 
 uint8_t get_enable(uint8_t i){
-	uint8_t enable = 10;
+	uint8_t enable = 0;
 
 	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
 		if (i < MAX_485_SENSORS)

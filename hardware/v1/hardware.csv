@@ -1,0 +1,14 @@
+"Id";"Designator";"Package";"Quantity";"Designation";"Supplier and ref";
+1;",,,,,,,,,,,,,";"pad";14;"";;;
+2;"R9,R10,R6,R7,R8";"Resistor_SMD+THTuniversal_2512_RM10_HandSoldering";5;"R";;;
+3;"Q0,Q1,Q2";"SOT-23";3;"BSS138";;;
+4;"R0,R1,R2,R3,R5,R11,R4";"R_0805";7;"R";;;
+5;"U1";"D1_mini_board";1;"WeMos_mini";;;
+6;"U2";"DIP-8_W7.62mm";1;"75LBC176";;;
+7;"C1,C2,C3";"C_0805_HandSoldering";3;"C";;;
+8;"P1";"Pin_Header_Straight_1x02";1;"CONN_01X02";;;
+9;"C4";"C_1206";1;"C";;;
+10;"D1";"LED-5MM";1;"LED";;;
+11;"J1";"PhoenixContact_MSTBVA-G_03x5.08mm_Vertical";1;"Screw_Terminal_1x03";;;
+12;"J2";"PhoenixContact_MSTBVA-G_03x5.00mm_Vertical";1;"Screw_Terminal_1x03";;;
+13;"P2";"Molex_KK-6410-08_08x2.54mm_Straight";1;"CONN_01X08";;;
