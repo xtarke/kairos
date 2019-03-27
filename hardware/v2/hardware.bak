@@ -15,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L wemos_mini:WeMos_mini U1
+L hardware-rescue:WeMos_mini-wemos_mini U1
 U 1 1 5BB7B1E5
 P 1900 1400
 F 0 "U1" H 1900 1900 60  0000 C CNN
@@ -31,7 +31,7 @@ U 1 1 5BB7B296
 P 3400 3950
 F 0 "U2" H 3750 4400 50  0000 C CNN
 F 1 "75LBC176" H 3750 4300 50  0000 C CNN
-F 2 "Housings_DIP:DIP-8_W7.62mm" H 3400 3950 50  0001 C CNN
+F 2 "Package_DIP:DIP-8_W7.62mm" H 3400 3950 50  0001 C CNN
 F 3 "" H 3400 3950 50  0000 C CNN
 	1    3400 3950
 	1    0    0    -1  
@@ -360,7 +360,7 @@ U 1 1 5BBBC15A
 P 4400 3400
 F 0 "R6" V 4480 3400 50  0000 C CNN
 F 1 "150R" V 4400 3400 50  0000 C CNN
-F 2 "Resistors_Universal:Resistor_SMD+THTuniversal_2512_RM10_HandSoldering" V 4330 3400 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 4330 3400 50  0001 C CNN
 F 3 "" H 4400 3400 50  0000 C CNN
 	1    4400 3400
 	0    1    1    0   
@@ -898,7 +898,7 @@ F 3 "" H 7100 650 50  0000 C CNN
 $EndComp
 Wire Wire Line
 	7100 650  7100 750 
-Text GLabel 6750 1050 0    60   Output ~ 0
+Text GLabel 6100 1050 0    60   Output ~ 0
 A0
 Text GLabel 2750 2000 2    60   Input ~ 0
 A0
@@ -922,8 +922,6 @@ F 3 "https://www.diodes.com/assets/Datasheets/ds11005.pdf" H 6980 1050 50  0001 
 	1    7100 1050
 	0    -1   -1   0   
 $EndComp
-Wire Wire Line
-	6750 1050 7300 1050
 Connection ~ 7300 1050
 Wire Wire Line
 	7300 1050 8000 1050
@@ -6470,4 +6468,48 @@ Wire Wire Line
 	9850 3750 10200 3750
 Wire Wire Line
 	9150 3750 9550 3750
+$Comp
+L hardware-rescue:R R?
+U 1 1 5C9C7BAA
+P 6400 1050
+F 0 "R?" V 6480 1050 50  0000 C CNN
+F 1 "10k" V 6400 1050 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 6330 1050 50  0001 C CNN
+F 3 "" H 6400 1050 50  0000 C CNN
+	1    6400 1050
+	0    -1   -1   0   
+$EndComp
+$Comp
+L hardware-rescue:C C?
+U 1 1 5C9C7C4E
+P 6650 1350
+F 0 "C?" H 6675 1450 50  0000 L CNN
+F 1 "100n" H 6675 1250 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 6688 1200 50  0001 C CNN
+F 3 "" H 6650 1350 50  0000 C CNN
+	1    6650 1350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5C9C7CDC
+P 6650 1550
+F 0 "#PWR?" H 6650 1300 50  0001 C CNN
+F 1 "GND" H 6650 1400 50  0000 C CNN
+F 2 "" H 6650 1550 50  0000 C CNN
+F 3 "" H 6650 1550 50  0000 C CNN
+	1    6650 1550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6550 1050 6650 1050
+Wire Wire Line
+	6650 1200 6650 1050
+Connection ~ 6650 1050
+Wire Wire Line
+	6650 1050 7300 1050
+Wire Wire Line
+	6250 1050 6100 1050
+Wire Wire Line
+	6650 1500 6650 1550
 $EndSCHEMATC

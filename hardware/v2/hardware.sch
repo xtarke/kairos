@@ -15,7 +15,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L wemos_mini:WeMos_mini U1
+L hardware-rescue:WeMos_mini-wemos_mini U1
 U 1 1 5BB7B1E5
 P 1900 1400
 F 0 "U1" H 1900 1900 60  0000 C CNN
@@ -884,7 +884,7 @@ F 3 "" H 7100 1550 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	7100 1350 7100 1550
+	7100 1350 7100 1500
 $Comp
 L power:+3.3V #PWR026
 U 1 1 5C8FEC0E
@@ -898,7 +898,7 @@ F 3 "" H 7100 650 50  0000 C CNN
 $EndComp
 Wire Wire Line
 	7100 650  7100 750 
-Text GLabel 6750 1050 0    60   Output ~ 0
+Text GLabel 6700 1050 0    60   Output ~ 0
 A0
 Text GLabel 2750 2000 2    60   Input ~ 0
 A0
@@ -922,11 +922,6 @@ F 3 "https://www.diodes.com/assets/Datasheets/ds11005.pdf" H 6980 1050 50  0001 
 	1    7100 1050
 	0    -1   -1   0   
 $EndComp
-Wire Wire Line
-	6750 1050 7300 1050
-Connection ~ 7300 1050
-Wire Wire Line
-	7300 1050 8000 1050
 $Comp
 L power:+9V #PWR034
 U 1 1 5C8BC9D6
@@ -1026,7 +1021,6 @@ F 3 "" H 8450 650 50  0000 C CNN
 $EndComp
 Wire Wire Line
 	8250 1050 8000 1050
-Connection ~ 8000 1050
 Wire Wire Line
 	8000 1050 8000 650 
 Wire Wire Line
@@ -6470,4 +6464,46 @@ Wire Wire Line
 	9850 3750 10200 3750
 Wire Wire Line
 	9150 3750 9550 3750
+$Comp
+L hardware-rescue:R R18
+U 1 1 5C9C7BAA
+P 7750 1050
+F 0 "R18" V 7830 1050 50  0000 C CNN
+F 1 "10k" V 7750 1050 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 7680 1050 50  0001 C CNN
+F 3 "" H 7750 1050 50  0000 C CNN
+	1    7750 1050
+	0    -1   -1   0   
+$EndComp
+$Comp
+L hardware-rescue:C C6
+U 1 1 5C9C7C4E
+P 7450 1300
+F 0 "C6" H 7475 1400 50  0000 L CNN
+F 1 "100n" H 7475 1200 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 7488 1150 50  0001 C CNN
+F 3 "" H 7450 1300 50  0000 C CNN
+	1    7450 1300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7100 1500 7450 1500
+Wire Wire Line
+	7450 1500 7450 1450
+Connection ~ 7100 1500
+Wire Wire Line
+	7100 1500 7100 1550
+Wire Wire Line
+	7450 1050 7450 1150
+Wire Wire Line
+	7600 1050 7450 1050
+Connection ~ 7450 1050
+Wire Wire Line
+	7900 1050 8000 1050
+Connection ~ 8000 1050
+Wire Wire Line
+	6700 1050 7300 1050
+Connection ~ 7300 1050
+Wire Wire Line
+	7300 1050 7450 1050
 $EndSCHEMATC

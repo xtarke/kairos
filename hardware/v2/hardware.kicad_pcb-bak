@@ -2,7 +2,7 @@
 
   (general
     (thickness 1.6)
-    (drawings 11)
+    (drawings 12)
     (tracks 183)
     (zones 0)
     (modules 41)
@@ -1860,6 +1860,7 @@
     )
   )
 
+  (gr_line (start 212.852 145.415) (end 127.635 145.415) (layer Edge.Cuts) (width 0.1))
   (gr_text "Placa da fonte. Ver diagramas no dir. files." (at 212.725 153.289) (layer Margin)
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )
