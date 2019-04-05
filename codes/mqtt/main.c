@@ -17,6 +17,7 @@
 #include <queue.h>
 
 #include "network.h"
+#include "pressure.h"
 #include "comm.h"
 
 #include "sysparam.h"
@@ -65,6 +66,10 @@ static void  status_publish_task(void *pvParameters)
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 3000 / portTICK_PERIOD_MS);
 
+
+        printf("%d\n", get_adc());
+
+
         for (int i=0; i < MAX_485_SENSORS; i++){
 
         	if (get_enable(i)) {
@@ -80,7 +85,6 @@ static void  status_publish_task(void *pvParameters)
         		int fraction = myData.temperature % 10;
         		if (fraction < 0)
         			fraction = -fraction;
-
 
 				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d;%d", myData.temperature/10, fraction, myData.error);
 				// snprintf(to_publish_error.data, PUB_MSG_LEN, "%d", myData.error);
@@ -136,6 +140,8 @@ void user_init(void)
 
     xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
     xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);
+
+    xTaskCreate(&pressure_task, "pressure_task", 256, NULL, 4, NULL);
 
     xTaskCreate(&status_publish_task, "status_publish_task", 512, NULL, 6, NULL);
     xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 7, NULL);

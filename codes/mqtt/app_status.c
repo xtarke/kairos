@@ -17,14 +17,43 @@ struct system_status_t {
 	uint8_t error;
 };
 
+struct system_pressure_t {
+	uint16_t adc;
+	uint32_t pressure;
+};
+
 volatile struct system_status_t sys_status[MAX_485_SENSORS] = { {0, 0x0a, 1,0 },
 		{0, 0x0e, 1, 0}, {0, 0x0b, 0, 0}, {0, 0x0c, 0, 0} };
+
+volatile struct system_pressure_t sys_pressure = {0, 0};
 
 SemaphoreHandle_t sys_data_mutex;
 
 void app_status_init(){
 	vSemaphoreCreateBinary(sys_data_mutex);
 }
+
+
+void set_adc(uint16_t data){
+
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_pressure.adc = data;
+		xSemaphoreGive(sys_data_mutex);
+	}
+}
+
+uint16_t get_adc(){
+
+	uint16_t data = 0;
+
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		data = sys_pressure.adc;
+		xSemaphoreGive(sys_data_mutex);
+	}
+
+	return data;
+}
+
 
 void set_temperature(int16_t temp, uint8_t error, uint8_t i){
   	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
@@ -46,7 +75,6 @@ void get_temperature(uint8_t i, temperature_stauts_t *t){
 		}
 		xSemaphoreGive(sys_data_mutex);
 	}
-	return temp;
 }
 
 void set_rs485_addr(uint8_t i, uint8_t addr){

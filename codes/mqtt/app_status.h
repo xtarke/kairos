@@ -27,8 +27,10 @@ void unset_enable(uint8_t i);
 void set_enable(uint8_t i);
 uint8_t get_enable(uint8_t i);
 
-
 void set_error(uint8_t i, uint8_t error);
 uint8_t get_error(uint8_t i);
+
+void set_adc(uint16_t data);
+uint16_t get_adc();
 
 #endif /* APP_STATUS_H_ */
