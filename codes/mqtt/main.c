@@ -39,9 +39,9 @@ static void  status_publish_task(void *pvParameters)
 
 	temperature_stauts_t myData = {0,0};
     publisher_data_t to_publish_data;
-    publisher_data_t to_publish_error;
+    publisher_data_t to_publish_pressure;
 
-    memset(&to_publish_error, 0, sizeof(to_publish_error));
+    memset(&to_publish_pressure, 0, sizeof(to_publish_pressure));
     memset(&to_publish_data, 0, sizeof(to_publish_data));
 
     char *wifi_my_host_name = NULL;
@@ -52,49 +52,53 @@ static void  status_publish_task(void *pvParameters)
 	if (!wifi_my_host_name){
 		printf("Invalid host name\n");
 		strncpy(to_publish_data.topic,"host_1/temperatura/",PUB_TPC_LEN);
-		strncpy(to_publish_error.topic,"host_1/erro/",PUB_TPC_LEN);
+		strncpy(to_publish_pressure.topic,"host_1/pressure/",PUB_TPC_LEN);
 	}
 	else {
 		strncpy(to_publish_data.topic, wifi_my_host_name,PUB_TPC_LEN);
-		strncpy(to_publish_error.topic, wifi_my_host_name,PUB_TPC_LEN);
+		strncpy(to_publish_pressure.topic, wifi_my_host_name,PUB_TPC_LEN);
 		free(wifi_my_host_name);
 		strncat(to_publish_data.topic,"/temperatura/0",PUB_TPC_LEN);
-		strncat(to_publish_error.topic,"/erro/0",PUB_TPC_LEN);
+		strncat(to_publish_pressure.topic,"/pressure",PUB_TPC_LEN);
 	}
 
 
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 3000 / portTICK_PERIOD_MS);
 
+    	//len = strnlen(to_publish_pressure.topic, PUB_TPC_LEN);
+        // to_publish_pressure.topic[len-1] = '0' + i;
 
-        printf("%d\n", get_adc());
+        // printf("%s\n",to_publish_pressure.topic);
 
+        uint32_t pressure = get_pressure();
+        uint8_t error = get_pressure_error();
+
+        snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d;%d", pressure, error);
+
+        //printf("%s\n",to_publish_pressure.data);
+
+        if (xQueueSend(publish_queue, (void *)&to_publish_pressure, 0) == pdFALSE) {
+        	debug("Publish queue overflow.\r\n");
+        }
 
         for (int i=0; i < MAX_485_SENSORS; i++){
 
         	if (get_enable(i)) {
         		len = strnlen(to_publish_data.topic, PUB_TPC_LEN);
         		to_publish_data.topic[len-1] = '0' + i;
-        		len = strnlen(to_publish_error.topic, PUB_TPC_LEN);
-        		to_publish_error.topic[len-1] = '0' + i;
 
         		get_temperature(i, &myData);
-        		//error = get_error(i);
-        		//temperature = get_temperature(i);
 
         		int fraction = myData.temperature % 10;
         		if (fraction < 0)
         			fraction = -fraction;
 
 				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d;%d", myData.temperature/10, fraction, myData.error);
-				// snprintf(to_publish_error.data, PUB_MSG_LEN, "%d", myData.error);
 
 				if (xQueueSend(publish_queue, (void *)&to_publish_data, 0) == pdFALSE) {
 					debug("Publish queue overflow.\r\n");
 				}
-//				if (xQueueSend(publish_queue, (void *)&to_publish_error, 0) == pdFALSE) {
-//					debug("Publish queue overflow.\r\n");
-//				}
         	}
         }
     }
@@ -141,6 +145,7 @@ void user_init(void)
     xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
     xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);
 
+    xTaskCreate(&adc_task, "adc_task", 256, NULL, 4, NULL);
     xTaskCreate(&pressure_task, "pressure_task", 256, NULL, 4, NULL);
 
     xTaskCreate(&status_publish_task, "status_publish_task", 512, NULL, 6, NULL);

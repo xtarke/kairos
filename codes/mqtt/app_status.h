@@ -33,4 +33,10 @@ uint8_t get_error(uint8_t i);
 void set_adc(uint16_t data);
 uint16_t get_adc();
 
+uint32_t get_pressure();
+void set_pressure(uint32_t data);
+void set_pressure_error();
+void clear_pressure_error();
+uint8_t get_pressure_error();
+
 #endif /* APP_STATUS_H_ */

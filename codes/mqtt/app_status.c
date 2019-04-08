@@ -18,14 +18,16 @@ struct system_status_t {
 };
 
 struct system_pressure_t {
-	uint16_t adc;
 	uint32_t pressure;
+	uint16_t adc;
+	uint8_t is_enable;
+	uint8_t error;
 };
 
 volatile struct system_status_t sys_status[MAX_485_SENSORS] = { {0, 0x0a, 1,0 },
 		{0, 0x0e, 1, 0}, {0, 0x0b, 0, 0}, {0, 0x0c, 0, 0} };
 
-volatile struct system_pressure_t sys_pressure = {0, 0};
+volatile struct system_pressure_t sys_pressure = {0, 0, 1, 0};
 
 SemaphoreHandle_t sys_data_mutex;
 
@@ -54,6 +56,50 @@ uint16_t get_adc(){
 	return data;
 }
 
+void set_pressure(uint32_t data){
+
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_pressure.pressure = data;
+		xSemaphoreGive(sys_data_mutex);
+	}
+}
+
+uint32_t get_pressure(){
+	uint32_t data = 0;
+
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		data = sys_pressure.pressure;
+		xSemaphoreGive(sys_data_mutex);
+	}
+
+	return data;
+}
+
+void set_pressure_error(){
+
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_pressure.error = 1;
+		xSemaphoreGive(sys_data_mutex);
+	}
+}
+
+uint8_t get_pressure_error(){
+	uint8_t data = 0;
+
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		data = sys_pressure.error;
+		xSemaphoreGive(sys_data_mutex);
+	}
+	return data;
+}
+
+void clear_pressure_error(){
+
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_pressure.error = 0;
+		xSemaphoreGive(sys_data_mutex);
+	}
+}
 
 void set_temperature(int16_t temp, uint8_t error, uint8_t i){
   	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
@@ -66,7 +112,6 @@ void set_temperature(int16_t temp, uint8_t error, uint8_t i){
 }
 
 void get_temperature(uint8_t i, temperature_stauts_t *t){
-	int16_t temp = -100;
 
 	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
 		if (i < MAX_485_SENSORS){
@@ -144,6 +189,5 @@ uint8_t get_enable(uint8_t i){
 
 	return enable;
 }
-
 
 
