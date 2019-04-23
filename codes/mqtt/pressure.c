@@ -53,13 +53,16 @@ void adc_task(void *pvParameters){
  *   AmpopG        R_ADC1 + RADC2
  *
  * AmpopG = 2  R_shunt = 680 / 2 = 340  R_ADC1 = 100k R_ADC2 = 220K  		 *
- * VinADC = i * 53.125
+ *
+ * R_shunt + AMPOP = 340 || 30k = 336,16
+ *
+ * VinADC = i * 52.530
  *
  *         VinADC
  * ADC = -------- * 1024
  *          Vref
  *
- *  -----A0  <--- Board connection
+ *  -----A0     <--- Board connection
  *    |
  *  220K
  *    |--- ADC  <-- ESP Analog input
@@ -67,10 +70,9 @@ void adc_task(void *pvParameters){
  *    |
  *   GND
  *
- *
  *            375 * ADC
  * P(ADC) = ------------- - 1.5
- *          1024 * 53.125
+ *          1024 * 52530
  *
  */
 
@@ -78,15 +80,18 @@ void pressure_task(void *pvParameters){
 
 	int p = 0;
 
-
 	while (1) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 
 		/* Get ADC filtered data */
 		p = get_adc() * 375000;
-		p = p / 54400 - 1500;
+		p = p / 53790 - 1500;
 
-		/* printf("P: %d \n", p); */
+		/* Convert BAR to kgfm/cm2 : 1 BAR = 1.01972 */
+		p = p * 10197;
+		p = p / 10000;
+
+		printf("P: %d \n", p);
 
 		if (p < -500)
 			set_pressure_error();
@@ -97,8 +102,5 @@ void pressure_task(void *pvParameters){
 			p = 0;
 
 		set_pressure(p);
-
-
-
 	}
 }
