@@ -1,13 +1,14 @@
 [Unit]
 Description=Kairos MQTT to influx gateway.
+After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/starke/influxKairos.py <mqtt broker> <mqtt user> <mqtt password> <influx user> <influx password>
-#ExecStop=/bin/kill -9 $MAINPID
-#ExecReload=/bin/kill -HUP $MAINPID
-#KillMode=process
-User=starke
+ExecStart=/usr/bin/python3 -u /home/<user>/influxKairos.py <mqtt broker> <mqtt user> <mqtt password> <influx user> <influx password>
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
 
 [Install]
 WantedBy=multi-user.target

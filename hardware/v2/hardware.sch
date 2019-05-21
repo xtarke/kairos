@@ -6512,4 +6512,37 @@ F 3 "" H 6450 4250 50  0000 C CNN
 $EndComp
 Wire Wire Line
 	6450 4100 6450 4250
+$Comp
+L Mechanical:MountingHole H1
+U 1 1 5CD38FDD
+P 5200 800
+F 0 "H1" H 5300 846 50  0000 L CNN
+F 1 "MountingHole" H 5300 755 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 5200 800 50  0001 C CNN
+F 3 "~" H 5200 800 50  0001 C CNN
+	1    5200 800 
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H2
+U 1 1 5CD39235
+P 5200 1250
+F 0 "H2" H 5300 1296 50  0000 L CNN
+F 1 "MountingHole" H 5300 1205 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 5200 1250 50  0001 C CNN
+F 3 "~" H 5200 1250 50  0001 C CNN
+	1    5200 1250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H3
+U 1 1 5CD3932A
+P 5850 1000
+F 0 "H3" H 5950 1046 50  0000 L CNN
+F 1 "MountingHole" H 5950 955 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 5850 1000 50  0001 C CNN
+F 3 "~" H 5850 1000 50  0001 C CNN
+	1    5850 1000
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
