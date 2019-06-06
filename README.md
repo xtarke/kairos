@@ -58,3 +58,12 @@ CREATE USER admin WITH PASSWORD '<password>' WITH ALL PRIVILEGES
 ```
     GRANT ALL ON "database_name" TO "username"
 ```
+
+## Manutenção banco de dados:
+
+```
+show database 
+use <database_name>
+select * from camera_temp
+drop series from camera_temp
+```
