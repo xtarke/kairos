@@ -110,10 +110,22 @@ static void  hearbeat_task(void *pvParameters)
 	IOMUX_GPIO4 = IOMUX_GPIO4_FUNC_GPIO | IOMUX_PIN_OUTPUT_ENABLE; /* change this line if you change 'gpio' */
 
 	while(1) {
-		GPIO.OUT_SET = BIT(4);
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
-		GPIO.OUT_CLEAR = BIT(4);
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
+		/* Disable SoftAP mode if connected */
+		if (sdk_wifi_station_get_connect_status() == STATION_GOT_IP){
+			sdk_wifi_set_opmode(STATION_MODE);
+
+			GPIO.OUT_SET = BIT(4);
+			vTaskDelay(1000 / portTICK_PERIOD_MS);
+			GPIO.OUT_CLEAR = BIT(4);
+			vTaskDelay(1000 / portTICK_PERIOD_MS);
+		}
+		else {
+			GPIO.OUT_SET = BIT(4);
+			vTaskDelay(200 / portTICK_PERIOD_MS);
+			GPIO.OUT_CLEAR = BIT(4);
+			vTaskDelay(200 / portTICK_PERIOD_MS);
+		}
+
 	}
 }
 
@@ -140,7 +152,7 @@ void user_init(void)
      * Get return of xTaskCreate.
      *
      */
-    xTaskCreate(&hearbeat_task, "led_task",  128, NULL, 3, NULL);
+    xTaskCreate(&hearbeat_task, "led_task",  256, NULL, 3, NULL);
 
     xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
     xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);

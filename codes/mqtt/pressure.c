@@ -91,7 +91,7 @@ void pressure_task(void *pvParameters){
 		p = p * 10197;
 		p = p / 10000;
 
-		printf("P: %d \n", p);
+		/* printf("P: %d \n", p); */
 
 		if (p < -500)
 			set_pressure_error();

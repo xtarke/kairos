@@ -2029,6 +2029,7 @@ void wificfg_init(uint32_t port, const wificfg_dispatch *dispatch)
     char *wifi_sta_password = NULL;
     char *wifi_ap_ssid = NULL;
     char *wifi_ap_password = NULL;
+    char *hostname = NULL;
 
     uint32_t base_addr;
     uint32_t num_sectors;
@@ -2036,6 +2037,13 @@ void wificfg_init(uint32_t port, const wificfg_dispatch *dispatch)
         printf("Warning: WiFi config, sysparam not initialized\n");
         return;
     }
+
+    /* Set hostname as SSID */
+	sysparam_get_string("hostname", &hostname);
+	if (hostname){
+		sysparam_set_string("wifi_ap_ssid", hostname);
+		free(hostname);
+	}
 
     sysparam_get_string("wifi_ap_ssid", &wifi_ap_ssid);
     sysparam_get_string("wifi_ap_password", &wifi_ap_password);
