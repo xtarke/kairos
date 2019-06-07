@@ -2,7 +2,7 @@
  * app_status.h
  *
  *  Created on: Sep 5, 2018
- *      Author: xtarke
+ *      Author: Renan Augusto Starke
  */
 
 #ifndef APP_STATUS_H_

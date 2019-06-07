@@ -66,17 +66,10 @@ static void  status_publish_task(void *pvParameters)
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 3000 / portTICK_PERIOD_MS);
 
-    	//len = strnlen(to_publish_pressure.topic, PUB_TPC_LEN);
-        // to_publish_pressure.topic[len-1] = '0' + i;
-
-        // printf("%s\n",to_publish_pressure.topic);
-
         uint32_t pressure = get_pressure();
         uint8_t error = get_pressure_error();
 
-        snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d;%d", pressure, error);
-
-        //printf("%s\n",to_publish_pressure.data);
+        snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d.%d;%d", pressure/1000, pressure%1000, error);
 
         if (xQueueSend(publish_queue, (void *)&to_publish_pressure, 0) == pdFALSE) {
         	debug("Publish queue overflow.\r\n");

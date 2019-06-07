@@ -2,7 +2,7 @@
  * pressure.c
  *
  *  Created on: Apr 5, 2019
- *      Author: xtarke
+ *      Author: Renan Augusto Starke
  */
 
 #include <FreeRTOS.h>
@@ -90,8 +90,6 @@ void pressure_task(void *pvParameters){
 		/* Convert BAR to kgfm/cm2 : 1 BAR = 1.01972 */
 		p = p * 10197;
 		p = p / 10000;
-
-		/* printf("P: %d \n", p); */
 
 		if (p < -500)
 			set_pressure_error();

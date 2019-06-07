@@ -2,7 +2,7 @@
  * network.h
  *
  *  Created on: May 2, 2018
- *      Author: xtarke
+ *      Author: Renan Augusto Starke
  */
 
 #ifndef NETWORK_H_

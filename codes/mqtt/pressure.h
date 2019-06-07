@@ -2,7 +2,7 @@
  * pressure.h
  *
  *  Created on: Apr 5, 2019
- *      Author: xtarke
+ *      Author: Renan Augusto Starke
  */
 
 #ifndef PRESSURE_H_

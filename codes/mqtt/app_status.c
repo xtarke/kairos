@@ -2,7 +2,7 @@
  * app_status.c
  *
  *  Created on: Sep 5, 2018
- *      Author: xtarke
+ *      Author: Renan Augusto Starke
  */
 
 #include <FreeRTOS.h>
