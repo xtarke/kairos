@@ -21,7 +21,7 @@
 #include "network.h"
 #include "app_status.h"
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
@@ -171,11 +171,11 @@ void status_task(void *pvParameters)
 		#endif
 					temperature = (rx_pkg[3] << 8) | rx_pkg[4];
 				}else
-					debug("status error: %d\n", error);
+					debug("status error: %d %d\n", i, error);
 
 				/* Atomic set */
 				set_temperature(temperature, error, i);
-				vTaskDelay(100 / portTICK_PERIOD_MS);
+				vTaskDelay(200 / portTICK_PERIOD_MS);
        		}
        	}
     }
