@@ -147,7 +147,7 @@ void user_init(void)
      */
     xTaskCreate(&hearbeat_task, "led_task",  256, NULL, 3, NULL);
 
-    xTaskCreate(&status_task, "tank_status_task", 256, NULL, 8, NULL);
+    xTaskCreate(&status_task, "tank_status_task", 256, NULL, 4, NULL);
 
     xTaskCreate(&commands_task, "485_cmd_task", 256, NULL, 4, &xHandling_485_cmd_task);
 

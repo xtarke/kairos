@@ -129,7 +129,7 @@ uint16_t CRC16_2(uint8_t *buf, int len)
 void status_task(void *pvParameters)
 {
     int16_t temperature = 0, crc16;
-    uint8_t error = 0;
+    uint8_t retries = 0, error = 0;
     uint8_t rx_pkg[16], pkg[8] = {0x07, 0x1e, 0x83, 0x88, 0xff};
 
     memset(rx_pkg, 0, sizeof(rx_pkg));
@@ -139,9 +139,9 @@ void status_task(void *pvParameters)
 
     while (1) {
        	vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-       	for (int i=0; i < MAX_485_SENSORS; i++){
-       		error = 0;
+       	
+		for (int i=0; i < MAX_485_SENSORS;){            
+            error = 0;
        		vTaskDelay(100 / portTICK_PERIOD_MS);
        		if (get_enable(i)) {
 
@@ -158,6 +158,22 @@ void status_task(void *pvParameters)
 				}
 				else
 					error = 2;
+                
+                /* Retiries up to 5 times with 485 errors */
+                if (error == 1){
+					retries++;
+                    
+					debug("485 error: %d %d\n", i, retries);
+					
+					if (retries < 5) continue;
+					else{
+						/* Set error and try next sensor */
+						set_error(i,error);
+						retries = 0;
+						i++;
+						continue;
+					}
+                }
 
 				/* Check CRC from received package */
 				crc16 = CRC16_2(rx_pkg,11);
@@ -176,8 +192,13 @@ void status_task(void *pvParameters)
 				/* Atomic set */
 				set_temperature(temperature, error, i);
 				vTaskDelay(200 / portTICK_PERIOD_MS);
-       		}
-       	}
+                
+                
+                
+       		}       	
+			i++;
+		}
+       	
     }
 }
 

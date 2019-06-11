@@ -1,3 +1,5 @@
+# Copy to /etc/systemd/system
+
 [Unit]
 Description=Kairos MQTT to influx gateway.
 After=network.target
