@@ -44,7 +44,7 @@
 
 #include "broker_credenctials.h"
 
-//#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
@@ -151,7 +151,7 @@ static void topic_received(mqtt_message_data_t *md)
 
 void  mqtt_task(void *pvParameters)
 {
-    int ret         = 0;
+    int ret = 0, port = MQTT_PORT;
     struct mqtt_network network;
     mqtt_client_t client   = mqtt_client_default;
     char mqtt_client_id[20];
@@ -176,17 +176,26 @@ void  mqtt_task(void *pvParameters)
     init_mqtt_topics();
 
     while(1) {
-		char *wifi_mqtt_ip_addr = NULL;
+		char *wifi_mqtt_addr = NULL;
+        char *wifi_mqtt_port = NULL;
+        char *wifi_mqtt_user = NULL;
+        char *wifi_mqtt_pass = NULL;
 
-		/* Get MQTT host IP from web server confifguration */
-    	sysparam_get_string("wifi_mqtt_ip_addr", &wifi_mqtt_ip_addr);
+		/* Get MQTT host from web server configuration */
+    	sysparam_get_string("wifi_mqtt_addr", &wifi_mqtt_addr);
+        sysparam_get_string("wifi_mqtt_port", &wifi_mqtt_port);
+        sysparam_get_string("wifi_mqtt_user", &wifi_mqtt_user);
+        sysparam_get_string("wifi_mqtt_pass", &wifi_mqtt_pass);
 
-    	if (wifi_mqtt_ip_addr) {
-    		debug("My mqtt server is: %s\n", wifi_mqtt_ip_addr);
+
+    	if (wifi_mqtt_addr != NULL && wifi_mqtt_port != NULL && 
+            wifi_mqtt_user != NULL && wifi_mqtt_pass != NULL) {
+    		debug("My mqtt server is: %s\n", wifi_mqtt_addr);
     		debug("%s: started\n\r", __func__);
-    		debug("%s: (Re)connecting to MQTT server %s ... ",__func__,
-					wifi_mqtt_ip_addr);
-
+    		debug("%s: (Re)connecting to MQTT server %s ... @ %s ",__func__,
+					wifi_mqtt_addr, wifi_mqtt_port);
+            port = atoi(wifi_mqtt_port);
+            free(wifi_mqtt_port);
     	}
     	else {
     		debug("%s: MQTT server configuration is invalid.\n",__func__);
@@ -195,12 +204,16 @@ void  mqtt_task(void *pvParameters)
     		continue;
     	}
 
-        ret = mqtt_network_connect(&network, wifi_mqtt_ip_addr, MQTT_PORT);
-        if( ret ){
+        ret = mqtt_network_connect(&network, wifi_mqtt_addr, port);
+        // ret = mqtt_network_connect(&network, MQTT_HOST, MQTT_PORT);
+
+
+        if(ret){
         	debug("error: %d. Retry in 10s\n\r", ret);
             vTaskDelay(10000 / portTICK_PERIOD_MS);
             continue;
         }
+    	
 
         mqtt_client_new(&client, &network, 1000, mqtt_buf, 100,
                       mqtt_readbuf, 100);
@@ -208,8 +221,8 @@ void  mqtt_task(void *pvParameters)
         data.willFlag       = 0;
         data.MQTTVersion    = 3;
         data.clientID.cstring   = mqtt_client_id;
-        data.username.cstring   = MQTT_USER;
-        data.password.cstring   = MQTT_PASS;
+        data.username.cstring   = wifi_mqtt_user;
+        data.password.cstring   = wifi_mqtt_pass;
         data.keepAliveInterval  = 10;
         data.cleansession   = 0;
 
@@ -241,7 +254,7 @@ void  mqtt_task(void *pvParameters)
             while(xQueueReceive(publish_queue, (void *)&to_publish, 0) == pdTRUE){
                 mqtt_message_t message;
                 message.payload = to_publish.data;
-                message.payloadlen = PUB_MSG_LEN;
+                message.payloadlen = strlen(to_publish.data); //PUB_MSG_LEN;
                 message.dup = 0;
                 message.qos = MQTT_QOS1;
                 message.retained = 0;

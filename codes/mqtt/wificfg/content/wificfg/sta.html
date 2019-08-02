@@ -50,10 +50,21 @@
 "pattern=\"(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)_*(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)_*){3}\" "
 "name=\"sta_ip_addr\" placeholder=\"192.168.1.50\" value=\"",
 "\"></dd>"
-"<dt><label for=\"mqtt\">MQTT broker IP Address</label></dt>"
-"<dd><input id=\"mqtt\" type=\"text\" maxlength=\"15\" size=\"15\" "
-"pattern=\"(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)_*(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)_*){3}\" "
-"name=\"wifi_mqtt_ip_addr\" placeholder=\"192.168.1.2\" value=\"",
+"<dt><label for=\"mqtt\">MQTT Broker Address</label></dt>"
+"<dd><input id=\"mqtt\" type=\"text\" maxlength=\"63\" size=\"15\" "
+"name=\"wifi_mqtt_addr\" placeholder=\"192.168.1.2\" value=\"",
+"\"></dd>"
+"<dt><label for=\"mqtt_port\">MQTT Broker Port</label></dt>"
+"<dd><input id=\"mqtt_port\" type=\"text\" maxlength=\"63\" size=\"15\" "
+"name=\"wifi_mqtt_port\" placeholder=\"1883\" value=\"",
+"\"></dd>"
+"<dt><label for=\"mqtt_user\">MQTT Broker User</label></dt>"
+"<dd><input id=\"mqtt_port\" type=\"text\" maxlength=\"63\" size=\"15\" "
+"name=\"wifi_mqtt_user\" placeholder=\"my_user\" value=\"",
+"\"></dd>"
+"<dt><label for=\"mqtt_pass\">MQTT Broker Password</label></dt>"
+"<dd><input id=\"mqtt_pass\" type=\"text\" maxlength=\"63\" size=\"15\" "
+"name=\"wifi_mqtt_pass\" placeholder=\"my_pass\" value=\"",
 "\"></dd>"
 "<dt><label for=\"nm\">Static Netmask</label></dt>"
 "<dd><input id=\"nm\" type=\"text\" maxlength=\"15\" size=\"15\" "

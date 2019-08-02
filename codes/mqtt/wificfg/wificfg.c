@@ -410,7 +410,10 @@ typedef enum {
     FORM_NAME_AP_DHCP_LEASES,
     FORM_NAME_AP_DNS,
     FORM_NAME_AP_MDNS,
-	FORM_NAME_MQTT_IP_ADDRR,
+	FORM_NAME_MQTT_ADDR,
+    FORM_NAME_MQTT_PORT,
+    FORM_NAME_MQTT_USER,
+    FORM_NAME_MQTT_PASS,
     FORM_NAME_DONE,
     FORM_NAME_NONE
 } form_name;
@@ -446,7 +449,10 @@ static const struct {
     {"ap_dhcp_leases", FORM_NAME_AP_DHCP_LEASES},
     {"ap_dns", FORM_NAME_AP_DNS},
     {"ap_mdns", FORM_NAME_AP_MDNS},
-	{"wifi_mqtt_ip_addr", FORM_NAME_MQTT_IP_ADDRR},
+	{"wifi_mqtt_addr", FORM_NAME_MQTT_ADDR},
+    {"wifi_mqtt_port", FORM_NAME_MQTT_PORT},
+    {"wifi_mqtt_user", FORM_NAME_MQTT_USER},
+    {"wifi_mqtt_pass", FORM_NAME_MQTT_PASS},
 	{"done", FORM_NAME_DONE}
 };
 
@@ -953,15 +959,45 @@ static int handle_wifi_station(int s, wificfg_method method,
 
         if (wificfg_write_string_chunk(s, http_wifi_station_content[9], buf, len) < 0) return -1;
 
-        char *wifi_mqtt_ip_addr = NULL;
-	   sysparam_get_string("wifi_mqtt_ip_addr", &wifi_mqtt_ip_addr);
-	   if (wifi_mqtt_ip_addr) {
-		   wificfg_html_escape(wifi_mqtt_ip_addr, buf, len);
-		   free(wifi_mqtt_ip_addr);
-		   if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
-	   }
+        char *wifi_mqtt_addr = NULL;
+        sysparam_get_string("wifi_mqtt_addr", &wifi_mqtt_addr);
+        if (wifi_mqtt_addr) {
+            wificfg_html_escape(wifi_mqtt_addr, buf, len);
+            free(wifi_mqtt_addr);
+            if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
+        }
 
-	   if (wificfg_write_string_chunk(s, http_wifi_station_content[10], buf, len) < 0) return -1;
+        if (wificfg_write_string_chunk(s, http_wifi_station_content[10], buf, len) < 0) return -1;
+
+        char *wifi_mqtt_port = NULL;
+        sysparam_get_string("wifi_mqtt_port", &wifi_mqtt_port);
+        if (wifi_mqtt_port) {
+            wificfg_html_escape(wifi_mqtt_port, buf, len);
+            free(wifi_mqtt_port);
+            if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
+        }
+
+	   if (wificfg_write_string_chunk(s, http_wifi_station_content[11], buf, len) < 0) return -1;
+
+        char *wifi_mqtt_user = NULL;
+        sysparam_get_string("wifi_mqtt_user", &wifi_mqtt_user);
+        if (wifi_mqtt_user) {
+            wificfg_html_escape(wifi_mqtt_user, buf, len);
+            free(wifi_mqtt_user);
+            if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
+        }
+
+	   if (wificfg_write_string_chunk(s, http_wifi_station_content[12], buf, len) < 0) return -1;
+
+        char *wifi_mqtt_pass = NULL;
+        sysparam_get_string("wifi_mqtt_pass", &wifi_mqtt_pass);
+        if (wifi_mqtt_pass) {
+            wificfg_html_escape(wifi_mqtt_pass, buf, len);
+            free(wifi_mqtt_pass);
+            if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
+        }
+
+	   if (wificfg_write_string_chunk(s, http_wifi_station_content[13], buf, len) < 0) return -1;
 
         char *wifi_sta_netmask = NULL;
         sysparam_get_string("wifi_sta_netmask", &wifi_sta_netmask);
@@ -971,7 +1007,7 @@ static int handle_wifi_station(int s, wificfg_method method,
             if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
         }
 
-        if (wificfg_write_string_chunk(s, http_wifi_station_content[11], buf, len) < 0) return -1;
+        if (wificfg_write_string_chunk(s, http_wifi_station_content[14], buf, len) < 0) return -1;
         
         char *wifi_sta_gateway = NULL;
         sysparam_get_string("wifi_sta_gateway", &wifi_sta_gateway);
@@ -981,13 +1017,13 @@ static int handle_wifi_station(int s, wificfg_method method,
             if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
         }
 
-        if (wificfg_write_string_chunk(s, http_wifi_station_content[12], buf, len) < 0) return -1;
+        if (wificfg_write_string_chunk(s, http_wifi_station_content[15], buf, len) < 0) return -1;
 
         int8_t wifi_sta_mdns = 1;
         sysparam_get_int8("wifi_sta_mdns", &wifi_sta_mdns);
         if (wifi_sta_mdns && wificfg_write_string_chunk(s, "checked", buf, len) < 0) return -1;
 
-        if (wificfg_write_string_chunk(s, http_wifi_station_content[13], buf, len) < 0) return -1;
+        if (wificfg_write_string_chunk(s, http_wifi_station_content[16], buf, len) < 0) return -1;
 
         if (wificfg_write_chunk_end(s) < 0) return -1;
     }
@@ -1071,8 +1107,20 @@ static int handle_wifi_station_post(int s, wificfg_method method,
                 mdns_enable = strtoul(buf, NULL, 10) != 0;
                 break;
             }
-            case FORM_NAME_MQTT_IP_ADDRR: {
-            	sysparam_set_string("wifi_mqtt_ip_addr", buf);
+            case FORM_NAME_MQTT_ADDR: {
+            	sysparam_set_string("wifi_mqtt_addr", buf);
+            	break;
+            }
+            case FORM_NAME_MQTT_PORT: {
+            	sysparam_set_string("wifi_mqtt_port", buf);
+            	break;
+            }
+            case FORM_NAME_MQTT_USER: {
+            	sysparam_set_string("wifi_mqtt_user", buf);
+            	break;
+            }
+            case FORM_NAME_MQTT_PASS: {
+            	sysparam_set_string("wifi_mqtt_pass", buf);
             	break;
             }
             case FORM_NAME_DONE:
@@ -1197,11 +1245,11 @@ static int handle_wifi_ap(int s, wificfg_method method,
         if (wificfg_write_string_chunk(s, http_wifi_ap_content[15], buf, len) < 0) return -1;
         
         
-        char *wifi_mqtt_ip_addr = NULL;
-        sysparam_get_string("wifi_mqtt_ip_addr", &wifi_mqtt_ip_addr);
-        if (wifi_mqtt_ip_addr) {
-            wificfg_html_escape(wifi_mqtt_ip_addr, buf, len);
-            free(wifi_mqtt_ip_addr);
+        char *wifi_mqtt_addr = NULL;
+        sysparam_get_string("wifi_mqtt_addr", &wifi_mqtt_addr);
+        if (wifi_mqtt_addr) {
+            wificfg_html_escape(wifi_mqtt_addr, buf, len);
+            free(wifi_mqtt_addr);
             if (wificfg_write_string_chunk(s, buf, buf, len) < 0) return -1;
         }
 
@@ -1354,8 +1402,12 @@ static int handle_wifi_ap_post(int s, wificfg_method method,
                 mdns_enable = strtoul(buf, NULL, 10) != 0;
                 break;
             }
-            case FORM_NAME_MQTT_IP_ADDRR: {
-            	sysparam_set_string("wifi_mqtt_ip_addr", buf);
+            case FORM_NAME_MQTT_ADDR: {
+            	sysparam_set_string("wifi_mqtt_addr", buf);
+            	break;
+            }
+             case FORM_NAME_MQTT_PORT: {
+            	sysparam_set_string("wifi_mqtt_port", buf);
             	break;
             }
             case FORM_NAME_DONE:
@@ -2071,15 +2123,38 @@ void wificfg_init(uint32_t port, const wificfg_dispatch *dispatch)
         sysparam_set_int8("wifi_ap_disabled_restarts", wifi_ap_disabled_restarts);
     }
 
-    /* load default mqtt adress */
-    char *wifi_mqtt_ip_addr = NULL;
-	sysparam_get_string("wifi_mqtt_ip_addr", &wifi_mqtt_ip_addr);
-	if (!wifi_mqtt_ip_addr){
-		sysparam_set_string("wifi_mqtt_ip_addr", "172.16.0.2");
-		sysparam_get_string("wifi_mqtt_ip_addr", &wifi_mqtt_ip_addr);
+    /* load default mqtt address */
+    char *wifi_mqtt = NULL;
+	sysparam_get_string("wifi_mqtt_addr", &wifi_mqtt);
+	if (!wifi_mqtt){
+		sysparam_set_string("wifi_mqtt_addr", "172.16.0.2");
+		sysparam_get_string("wifi_mqtt_addr", &wifi_mqtt);
 	}
-	free(wifi_mqtt_ip_addr);
+	free(wifi_mqtt);
 
+    /* load default mqtt port */
+	sysparam_get_string("wifi_mqtt_port", &wifi_mqtt);
+	if (!wifi_mqtt){
+		sysparam_set_string("wifi_mqtt_port", "1883");
+		sysparam_get_string("wifi_mqtt_port", &wifi_mqtt);
+	}
+	free(wifi_mqtt);
+
+    /* load default mqtt user  */
+	sysparam_get_string("wifi_mqtt_user", &wifi_mqtt);
+	if (!wifi_mqtt){
+		sysparam_set_string("wifi_mqtt_user", "esp-xyz");
+		sysparam_get_string("wifi_mqtt_user", &wifi_mqtt);
+	}
+	free(wifi_mqtt);
+
+    /* load default mqtt password  */
+	sysparam_get_string("wifi_mqtt_pass", &wifi_mqtt);
+	if (!wifi_mqtt){
+		sysparam_set_string("wifi_mqtt_pass", "esp");
+		sysparam_get_string("wifi_mqtt_pass", &wifi_mqtt);
+	}
+	free(wifi_mqtt);
 
     /* Validate the configuration. */
     if (wifi_sta_enable && (!wifi_sta_ssid || !wifi_sta_password ||
