@@ -205,8 +205,6 @@ void  mqtt_task(void *pvParameters)
     	}
 
         ret = mqtt_network_connect(&network, wifi_mqtt_addr, port);
-        // ret = mqtt_network_connect(&network, MQTT_HOST, MQTT_PORT);
-
 
         if(ret){
         	debug("error: %d. Retry in 10s\n\r", ret);

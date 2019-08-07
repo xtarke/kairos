@@ -53,10 +53,14 @@
 #include <lwip/apps/mdns.h>
 #endif
 
+#include "../wifi_default.h"
 
 const char *wificfg_default_ssid = "EOR_%02X%02X%02X";
 const char *wificfg_default_password = "esp-open-rtos";
 const char *wificfg_default_hostname = "eor-%02x%02x%02x";
+
+const char *wifi_default_sta_ssid = WIFI_STA_DEFAULT_SSID;
+const char *wifi_default_sta_pass = WIFI_STA_DEFAULT_PASS;
 
 /* The http task stack allocates a single buffer to do much of it's work. */
 #define HTTP_BUFFER_SIZE 54
@@ -2099,13 +2103,23 @@ void wificfg_init(uint32_t port, const wificfg_dispatch *dispatch)
 
     sysparam_get_string("wifi_ap_ssid", &wifi_ap_ssid);
     sysparam_get_string("wifi_ap_password", &wifi_ap_password);
-    sysparam_get_string("wifi_sta_ssid", &wifi_sta_ssid);
-    sysparam_get_string("wifi_sta_password", &wifi_sta_password);
 
     int8_t wifi_sta_enable = 1;
     int8_t wifi_ap_enable = 1;
     sysparam_get_int8("wifi_sta_enable", &wifi_sta_enable);
     sysparam_get_int8("wifi_ap_enable", &wifi_ap_enable);
+
+    sysparam_get_string("wifi_sta_ssid", &wifi_sta_ssid);
+    if (!wifi_sta_ssid){
+        sysparam_set_string("wifi_sta_ssid", wifi_default_sta_ssid);
+		sysparam_get_string("wifi_sta_ssid", &wifi_sta_ssid);
+    }
+    
+    sysparam_get_string("wifi_sta_password", &wifi_sta_password);
+    if (!wifi_sta_password){
+        sysparam_set_string("wifi_sta_password", wifi_default_sta_pass);
+		sysparam_get_string("wifi_sta_password", &wifi_sta_password);
+    }
 
     int8_t wifi_sta_disabled_restarts = 0;
     sysparam_get_int8("wifi_sta_disabled_restarts", &wifi_sta_disabled_restarts);
