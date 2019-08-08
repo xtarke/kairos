@@ -52,14 +52,14 @@ static void  status_publish_task(void *pvParameters)
 	if (!wifi_my_host_name){
 		printf("Invalid host name\n");
 		strncpy(to_publish_data.topic,"host_1/temperatura/",PUB_TPC_LEN);
-		strncpy(to_publish_pressure.topic,"host_1/pressure/",PUB_TPC_LEN);
+		strncpy(to_publish_pressure.topic,"host_1/pressao/",PUB_TPC_LEN);
 	}
 	else {
 		strncpy(to_publish_data.topic, wifi_my_host_name,PUB_TPC_LEN);
 		strncpy(to_publish_pressure.topic, wifi_my_host_name,PUB_TPC_LEN);
 		free(wifi_my_host_name);
 		strncat(to_publish_data.topic,"/temperatura/0",PUB_TPC_LEN);
-		strncat(to_publish_pressure.topic,"/pressure",PUB_TPC_LEN);
+		strncat(to_publish_pressure.topic,"/pressao",PUB_TPC_LEN);
 	}
 
 
