@@ -41,6 +41,9 @@ class Data:
      
         self.database.write_points(self.dbdata)
 
+        print(self.dbdata)
+
+
     def set_error(self, error):
         self.dbdata[0]['fields']['error'] = error
 
