@@ -198,7 +198,7 @@ void  mqtt_task(void *pvParameters)
             free(wifi_mqtt_port);
     	}
     	else {
-    		debug("%s: MQTT server configuration is invalid.\n",__func__);
+    		printf("%s: MQTT server configuration is invalid.\n",__func__);
     		debug("Retry in 10s\n\r");
 			vTaskDelay(10000 / portTICK_PERIOD_MS);
     		continue;
