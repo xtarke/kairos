@@ -8,7 +8,10 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
+#include <stdint.h>
+#include "sysparam.h"
 #include "app_status.h"
+#include "bits.h"
 
 struct system_status_t {
 	int16_t temperature;
@@ -32,7 +35,32 @@ volatile struct system_pressure_t sys_pressure = {0, 0, 1, 0};
 SemaphoreHandle_t sys_data_mutex;
 
 void app_status_init(){
+	int8_t sensors = 0;
 	vSemaphoreCreateBinary(sys_data_mutex);
+
+	sysparam_status_t ret = sysparam_get_int8("sensors", &sensors);
+
+	if (ret != SYSPARAM_OK){
+		/* Enable bits:
+		bit:     4  3   2  1  0
+		sensor:  p  t3 t2  t1 t0
+		default is: pressure, t0 and t1 : 0x13 */
+		sysparam_set_int8("sensors", 0x13);
+		sysparam_get_int8("sensors", &sensors);
+	}
+
+	/* Enable/disable temperature sensors */
+	for (int i=0; i < 4;i++){
+		if (TST_BIT(sensors,i))
+			set_enable(i);
+		else		
+			unset_enable(i);
+	}
+
+	if (TST_BIT(sensors,4))
+		set_pressure_enable();
+	else
+		set_pressure_disable();
 }
 
 
@@ -81,6 +109,17 @@ void set_pressure_error(){
 		sys_pressure.error = 1;
 		xSemaphoreGive(sys_data_mutex);
 	}
+}
+
+uint8_t is_pressure_enable(){
+	uint8_t enable = 0;
+	
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		enable = sys_pressure.is_enable;
+		xSemaphoreGive(sys_data_mutex);
+	}
+
+	return enable;
 }
 
 uint8_t get_pressure_error(){
@@ -160,6 +199,21 @@ uint8_t get_error(uint8_t i){
 	}
 
 	return error;
+}
+
+
+void set_pressure_enable(){
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_pressure.is_enable = 1;
+		xSemaphoreGive(sys_data_mutex);
+	}
+}
+
+void set_pressure_disable(){
+	if (xSemaphoreTake(sys_data_mutex, portMAX_DELAY) == pdTRUE ){
+		sys_pressure.is_enable = 0;
+		xSemaphoreGive(sys_data_mutex);
+	}
 }
 
 void set_enable(uint8_t i){

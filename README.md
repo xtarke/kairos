@@ -1,5 +1,22 @@
 # Projeto Kairos
 
+## Tópicos
+
+### Configuração
+
+- tanque/xyz/cfg/0 : temperatura 0 ativado/desativado
+- tanque/xyz/cfg/1 : temperatura 1 ativado/desativado
+- tanque/xyz/cfg/2 : temperatura 2 ativado/desativado
+- tanque/xyz/cfg/3 : temperatura 3 ativado/desativado
+- tanque/xyz/cfg/4 : pressão ativado/desativado
+
+### Dados
+
+- tanque/xyz/temperatura/0
+- tanque/xyz/temperatura/1
+- tanque/xyz/temperatura/2
+- tanque/xyz/temperatura/3
+- tanque/xyz/pressao
 
 ## Guia de instalação banco de dados temporal
 
@@ -17,7 +34,7 @@ Maiores detalhes  em [InfluxManual](https://docs.influxdata.com/influxdb/v1.7/ad
 CREATE USER admin WITH PASSWORD '<password>' WITH ALL PRIVILEGES
 ```
 
-- Influx desabilita uysuários por padrão, portanto altera a configuração de _/etc/influxdb/influxdb.conf_ para:
+- Influx desabilita usuários por padrão, portanto altere a configuração de _/etc/influxdb/influxdb.conf_ para:
 ``` 
 [http]
   enabled = true

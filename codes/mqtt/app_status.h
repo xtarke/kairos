@@ -39,4 +39,8 @@ void set_pressure_error();
 void clear_pressure_error();
 uint8_t get_pressure_error();
 
+void set_pressure_enable();
+void set_pressure_disable();
+uint8_t is_pressure_enable();
+
 #endif /* APP_STATUS_H_ */

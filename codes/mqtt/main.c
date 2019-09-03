@@ -66,15 +66,17 @@ static void  status_publish_task(void *pvParameters)
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 10000 / portTICK_PERIOD_MS);
 
-        uint32_t pressure = get_pressure();
-        uint8_t error = get_pressure_error();
+        if (is_pressure_enable()){
+		
+			uint32_t pressure = get_pressure();
+        	uint8_t error = get_pressure_error();
 
-        snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d.%d;%d", pressure/1000, pressure%1000, error);
-		// snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d.%d", pressure/1000, pressure%1000);
-
-        if (xQueueSend(publish_queue, (void *)&to_publish_pressure, 0) == pdFALSE) {
-        	debug("Publish queue overflow.\r\n");
-        }
+        	snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d.%d;%d", pressure/1000, pressure%1000, error);
+		
+        	if (xQueueSend(publish_queue, (void *)&to_publish_pressure, 0) == pdFALSE) {
+        		debug("Publish queue overflow.\r\n");
+        	}
+		}
 
         for (int i=0; i < MAX_485_SENSORS; i++){
 

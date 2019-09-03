@@ -37,6 +37,7 @@
 #include "network.h"
 #include "comm.h"
 #include "app_status.h"
+#include "bits.h"
 
 /* You can use http://test.mosquitto.org/ to test mqtt_client instead
  * of setting up your own MQTT server */
@@ -44,7 +45,7 @@
 
 #include "broker_credenctials.h"
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
@@ -114,6 +115,8 @@ static void topic_received(mqtt_message_data_t *md)
 
 #ifdef DEBUG
     int i;
+    int8_t sensors = 0;
+    
     debug("Received: ");
     for( i = 0; i < md->topic->lenstring.len; ++i)
     	debug("%c", md->topic->lenstring.data[ i ]);
@@ -134,17 +137,48 @@ static void topic_received(mqtt_message_data_t *md)
     /* Convert string to int */
     rx_data.data = atoi((char *)(message->payload));
 
-    /* New rs485 address: set it and return immediately */
-    if (rx_data.cmd == 0) {
-    	set_rs485_addr(0, (uint8_t)rx_data.data);
-    	return;
+    sysparam_get_int8("sensors", &sensors);
+
+    /* Enable/disable temperature sensor */
+    if (rx_data.cmd < 4){
+        if (rx_data.data){
+            set_enable(rx_data.cmd);
+            SET_BIT(sensors,rx_data.cmd);
+        }
+        else {
+            unset_enable(rx_data.cmd);
+            CLR_BIT(sensors, rx_data.cmd);
+        }        
     }
 
-    /* Enqueue data and unblock task */
-    if (xQueueSend(command_queue, (void *)&rx_data, 0) == pdFALSE)
-		debug("rx_queue queue overflow.\r\n");
+     /* Enable/disable pressure sensor */
+    if (rx_data.cmd == 4){
+         if (rx_data.data){
+            set_pressure_enable();
+            SET_BIT(sensors, 4);
+         }
+        else{
+            set_pressure_disable();
+            CLR_BIT(sensors,4);
+        }
+    }
+    /* Update flash parameters */
+    sysparam_set_int8("sensors", sensors);
 
-    xTaskNotify(xHandling_485_cmd_task, 0, eNoAction);
+    printf("enableMaskSET: %x\n", sensors);
+    
+    //: Configuration for 485 in this version is disabled
+    /* New rs485 address: set it and return immediately */
+    /* if (rx_data.cmd == 0) {
+    	set_rs485_addr(0, (uint8_t)rx_data.data);
+    	return;
+    }*/
+
+    /* Enqueue data and unblock task */
+    // if (xQueueSend(command_queue, (void *)&rx_data, 0) == pdFALSE)
+	// 	debug("rx_queue queue overflow.\r\n");
+
+    // xTaskNotify(xHandling_485_cmd_task, 0, eNoAction);
 }
 
 
