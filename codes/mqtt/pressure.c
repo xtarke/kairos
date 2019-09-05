@@ -47,7 +47,20 @@ void adc_task(void *pvParameters){
  * Out: 4 .. 20 mA
  *
  * P(i) = 375 * i - 1.5
- *
+ * 
+ * ------------------------
+ * Generic:
+ * 
+ * P(i) = alpha * i + beta
+ * 
+ * alpha = Full_Scale 
+ *         ----------
+ *           0.016
+ * 
+ * beta = - Full_Scale * 0.004       Full_Scale
+ *          ------------------  =  - -----------
+ *               0.016                    4
+ * 
  * i * R_shunt        R_ADC_1
  * ----------- *  ---------------- = VinADC
  *   AmpopG        R_ADC1 + RADC2
@@ -71,9 +84,16 @@ void adc_task(void *pvParameters){
  *   GND
  *
  *            375 * ADC
- * P(ADC) = ------------- - 1.5
+ * P(ADC) = ------------- - 1.5  (For 0...6 BAR)
  *          1024 * 52530
  *
+ *            alpha * ADC
+ * P(ADC) = ------------- - beta  (For 0...6 BAR)
+ *          1024 * 52530
+ * 
+ * 
+ * 
+ * 
  */
 
 void pressure_task(void *pvParameters){
@@ -83,9 +103,14 @@ void pressure_task(void *pvParameters){
 	while (1) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 
+		int32_t alpha = get_pressure_alpha();
+		int32_t beta = get_pressure_beta();
+
 		/* Get ADC filtered data */
-		p = get_adc() * 375000;
-		p = p / 53790 - 1500;
+		// p = get_adc() * 375000;
+		// p = p / 53790 - 1500;
+		p = get_adc() * alpha;
+		p = p / 53790 - beta;
 
 		/* Convert BAR to kgfm/cm2 : 1 BAR = 1.01972 */
 		p = p * 10197;

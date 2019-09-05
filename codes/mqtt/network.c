@@ -116,7 +116,7 @@ static void topic_received(mqtt_message_data_t *md)
 #ifdef DEBUG
     int i;
     int8_t sensors = 0;
-    
+   
     debug("Received: ");
     for( i = 0; i < md->topic->lenstring.len; ++i)
     	debug("%c", md->topic->lenstring.data[ i ]);
@@ -162,11 +162,25 @@ static void topic_received(mqtt_message_data_t *md)
             CLR_BIT(sensors,4);
         }
     }
+
+    if (rx_data.cmd == 5){
+        set_pressure_alpha(rx_data.data);
+        sysparam_set_int32("alpha", rx_data.data);
+    }
+    
+    if (rx_data.cmd == 6){
+        set_pressure_beta(rx_data.data);
+        sysparam_set_int32("beta", rx_data.data);
+    }
+
+
     /* Update flash parameters */
     sysparam_set_int8("sensors", sensors);
 
-    printf("enableMaskSET: %x\n", sensors);
-    
+
+
+
+    // printf("enableMaskSET: %x\n", sensors);    
     //: Configuration for 485 in this version is disabled
     /* New rs485 address: set it and return immediately */
     /* if (rx_data.cmd == 0) {

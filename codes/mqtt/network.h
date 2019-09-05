@@ -12,7 +12,7 @@
 
 #define PUB_MSG_LEN 8
 #define PUB_TPC_LEN 24
-#define CFG_TOPICS 5
+#define CFG_TOPICS 7
 
 typedef struct publisher_data{
 	char topic[PUB_TPC_LEN];

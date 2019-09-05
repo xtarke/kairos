@@ -39,6 +39,11 @@ void set_pressure_error();
 void clear_pressure_error();
 uint8_t get_pressure_error();
 
+int32_t get_pressure_alpha();
+int32_t get_pressure_beta();
+void set_pressure_beta(int32_t beta);
+void set_pressure_alpha(int32_t alpha);
+
 void set_pressure_enable();
 void set_pressure_disable();
 uint8_t is_pressure_enable();

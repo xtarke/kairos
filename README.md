@@ -2,6 +2,14 @@
 
 ## Tópicos
 
+### Sensores
+
+- temperatura0: RS485=0x0a
+- temperatura1: RS485=0x0e
+- temperatura2: RS485=0x0b
+- temperatura3: RS485=0x0c
+- pressão: 4 a 20mA
+
 ### Configuração
 
 - tanque/xyz/cfg/0 : temperatura 0 ativado/desativado
@@ -9,6 +17,10 @@
 - tanque/xyz/cfg/2 : temperatura 2 ativado/desativado
 - tanque/xyz/cfg/3 : temperatura 3 ativado/desativado
 - tanque/xyz/cfg/4 : pressão ativado/desativado
+
+- Configuração do fundo de escala do sensor de pressão:
+    - tanque/xyz/cfg/5 : alpha (multiplicado por 1000).
+    - tanque/xyz/cfg/6 : beta (multiplicado por 1000).
 
 ### Dados
 
