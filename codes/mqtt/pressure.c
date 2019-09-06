@@ -61,11 +61,16 @@ void adc_task(void *pvParameters){
  *          ------------------  =  - -----------
  *               0.016                    4
  * 
+ * P(i) = 375*i - 1.5   (0..6 BAR) 
+ * 
  * i * R_shunt        R_ADC_1
  * ----------- *  ---------------- = VinADC
  *   AmpopG        R_ADC1 + RADC2
  *
- * AmpopG = 2  R_shunt = 680 / 2 = 340  R_ADC1 = 100k R_ADC2 = 220K  		 *
+ * AmpopG = 2 
+ * R_shunt = 680 / 2 = 340  Parallel with 30K (see schematic) = 336.19
+ * R_ADC1 = 100k 
+ * R_ADC2 = 220K  		
  *
  * R_shunt + AMPOP = 340 || 30k = 336,16
  *
@@ -74,6 +79,8 @@ void adc_task(void *pvParameters){
  *         VinADC
  * ADC = -------- * 1024
  *          Vref
+ * 
+ * Vref = ~1V
  *
  *  -----A0     <--- Board connection
  *    |
@@ -83,33 +90,31 @@ void adc_task(void *pvParameters){
  *    |
  *   GND
  *
- *            375 * ADC
- * P(ADC) = ------------- - 1.5  (For 0...6 BAR)
- *          1024 * 52530
+ *            375 * ADC                              375 * ADC
+ * P(ADC) = ------------- - 1.5  (For 0...6 BAR) ~= -----------  -1.5  
+ *            1024 * 52.530                            53791
  *
  *            alpha * ADC
  * P(ADC) = ------------- - beta  (For 0...6 BAR)
- *          1024 * 52530
- * 
- * 
- * 
+ *              53791
  * 
  */
 
 void pressure_task(void *pvParameters){
 
-	int p = 0;
+	int32_t p = 0;
 
 	while (1) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 
 		int32_t alpha = get_pressure_alpha();
 		int32_t beta = get_pressure_beta();
+		int32_t adc = get_adc();
 
 		/* Get ADC filtered data */
 		// p = get_adc() * 375000;
 		// p = p / 53790 - 1500;
-		p = get_adc() * alpha;
+		p = adc * alpha;
 		p = p / 53790 - beta;
 
 		/* Convert BAR to kgfm/cm2 : 1 BAR = 1.01972 */
@@ -125,5 +130,12 @@ void pressure_task(void *pvParameters){
 			p = 0;
 
 		set_pressure(p);
+
+#ifdef DEBUG
+		printf("-----\np (%d) = %d\n", adc, p);
+		printf("alpha = %d\n", alpha);
+		printf("beta = %d\n", beta);
+#endif
+
 	}
 }

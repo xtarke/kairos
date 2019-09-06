@@ -17,10 +17,21 @@
 - tanque/xyz/cfg/2 : temperatura 2 ativado/desativado
 - tanque/xyz/cfg/3 : temperatura 3 ativado/desativado
 - tanque/xyz/cfg/4 : pressão ativado/desativado
-
 - Configuração do fundo de escala do sensor de pressão:
     - tanque/xyz/cfg/5 : alpha (multiplicado por 1000).
     - tanque/xyz/cfg/6 : beta (multiplicado por 1000).
+
+P(i) = alpha * i + beta
+
+alpha = Full_Scale  * 1000
+        ----------
+           0.016
+
+beta =  Full_Scale * 0.004       Full_Scale * 1000
+        ------------------  =    -----------
+            0.016                    4
+
+P(i) = 375000*i - 1500   (0..6000 mBAR)
 
 ### Dados
 

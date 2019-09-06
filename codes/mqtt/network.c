@@ -72,6 +72,7 @@ void init_mqtt_topics(){
 	}
 	else {
 		for (int i=0; i < CFG_TOPICS; i++) {
+            memset(cfg_topics[i],0,sizeof(cfg_topics[i]));
 			snprintf(cfg_topics[i], PUB_TPC_LEN, "%s/cfg/%d", wifi_my_host_name,i);
 			debug("%s\n", cfg_topics[i]);
 		}
@@ -151,7 +152,7 @@ static void topic_received(mqtt_message_data_t *md)
         }        
     }
 
-     /* Enable/disable pressure sensor */
+    /* Enable/disable pressure sensor */
     if (rx_data.cmd == 4){
          if (rx_data.data){
             set_pressure_enable();
@@ -162,22 +163,20 @@ static void topic_received(mqtt_message_data_t *md)
             CLR_BIT(sensors,4);
         }
     }
+    /* Update sensors flash parameters */
+    sysparam_set_int8("sensors", sensors);
 
     if (rx_data.cmd == 5){
+        printf("alpha is: %d\n", rx_data.data);
         set_pressure_alpha(rx_data.data);
         sysparam_set_int32("alpha", rx_data.data);
     }
     
     if (rx_data.cmd == 6){
-        set_pressure_beta(rx_data.data);
+        printf("beta is: %d\n", rx_data.data);
+        set_pressure_beta(rx_data.data);       
         sysparam_set_int32("beta", rx_data.data);
     }
-
-
-    /* Update flash parameters */
-    sysparam_set_int8("sensors", sensors);
-
-
 
 
     // printf("enableMaskSET: %x\n", sensors);    
@@ -240,7 +239,7 @@ void  mqtt_task(void *pvParameters)
             wifi_mqtt_user != NULL && wifi_mqtt_pass != NULL) {
     		debug("My mqtt server is: %s\n", wifi_mqtt_addr);
     		debug("%s: started\n\r", __func__);
-    		debug("%s: (Re)connecting to MQTT server %s ... @ %s ",__func__,
+    		debug("%s: (Re)connecting to MQTT server %s ... @ %s \n",__func__,
 					wifi_mqtt_addr, wifi_mqtt_port);
             port = atoi(wifi_mqtt_port);
             free(wifi_mqtt_port);

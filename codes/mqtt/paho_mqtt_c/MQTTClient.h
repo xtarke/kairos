@@ -21,7 +21,7 @@
 #include "MQTTESP8266.h"
 
 #define MQTT_MAX_PACKET_ID 65535
-#define MQTT_MAX_MESSAGE_HANDLERS 5
+#define MQTT_MAX_MESSAGE_HANDLERS 8
 #define MQTT_MAX_FAIL_ALLOWED  2
 
 enum mqtt_qos {

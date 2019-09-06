@@ -10,7 +10,7 @@
 
 #include <semphr.h>
 
-#define PUB_MSG_LEN 8
+#define PUB_MSG_LEN 16
 #define PUB_TPC_LEN 24
 #define CFG_TOPICS 7
 

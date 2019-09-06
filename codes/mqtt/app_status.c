@@ -66,19 +66,19 @@ void app_status_init(){
 	else
 		set_pressure_disable();
 
-
 	ret = sysparam_get_int32("alpha", &alpha);
 	if (ret != SYSPARAM_OK){		
 		sysparam_set_int32("alpha", 375000);
 		sysparam_get_int32("alpha", &alpha);
 	}
+	set_pressure_alpha(alpha);
 
 	ret = sysparam_get_int32("beta", &beta);
 	if (ret != SYSPARAM_OK){		
 		sysparam_set_int32("beta", 1500);
 		sysparam_get_int32("beta", &beta);
 	}
-
+	set_pressure_beta(beta);
 }
 
 
