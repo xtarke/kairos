@@ -22,7 +22,7 @@
     - tanque/xyz/cfg/6 : beta (multiplicado por 1000).
 
 ```
-P(i) = alpha * i + beta
+P(i) = alpha * i - beta
 
 alpha = Full_Scale  * 1000
         ----------
