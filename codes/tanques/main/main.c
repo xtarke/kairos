@@ -27,10 +27,11 @@
 #include "nvs_flash.h"
 
 
-
 /* Custom includes */
 #include "app_status.h"
 #include "wifi_esptouch.h"
+#include "pressure.h"
+
 // #include "aws.h"
 
 // #include "i2c_master.h"
@@ -54,10 +55,14 @@ void app_main()
     // init_aws_system();
 
     configure_gpios();
+    config_adc();
     initialise_wifi_touch();
 
     app_status_init();
 
+    xTaskCreate(&adc_task, "adc_task", 256, NULL, 4, NULL);
+    xTaskCreate(&pressure_task, "pressure_task", 1024, NULL, 4, NULL);
+    
     // xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
     // xTaskCreate(central_task, "main_app_task", 4096, NULL, 10, NULL);
 

@@ -93,11 +93,11 @@ void app_status_init(){
 		}
 		ESP_LOGI(TAG,"alpha: %x", alpha);
 		set_pressure_alpha(alpha);
-
+		
 		err = nvs_get_i32(my_handle, "beta", &beta);
 		if (err != ESP_OK){		
 		 	nvs_set_i32(my_handle, "beta", 1500);
-		 	nvs_set_i32(my_handle, "beta", &beta);
+		 	nvs_get_i32(my_handle, "beta", &beta);
 		}
 		ESP_LOGI(TAG,"beta: %x", beta);
 		set_pressure_beta(beta);

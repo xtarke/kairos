@@ -9,27 +9,49 @@
 #include <task.h>
 #include <semphr.h>
 
-#include "espressif/esp_common.h"
+#include "driver/adc.h"
+#include "esp_log.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #include "app_status.h"
 
+//#define DEBUG
+
+
+#ifdef DEBUG
+static const char *TAG = "PRESURE";
+#endif
+
+uint16_t adc_data[8];
+
+void config_adc(){
+	// 1. init adc
+    adc_config_t adc_config;
+
+    // Depend on menuconfig->Component config->PHY->vdd33_const value
+    // When measuring system voltage(ADC_READ_VDD_MODE), vdd33_const must be set to 255.
+    adc_config.mode = ADC_READ_TOUT_MODE;
+    adc_config.clk_div = 8; // ADC sample collection clock = 80MHz/clk_div = 10MHz
+    ESP_ERROR_CHECK(adc_init(&adc_config));
+}
+
+
 
 void adc_task(void *pvParameters){
 
-	int i = 0;
-	uint16_t adc_data[8];
+	int i = 0;	
 	uint32_t sum = 0;
-
+	
 	memset(adc_data,0,sizeof(adc_data));
 
 	while (1) {
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 
 		/* Get ADC data */
-		uint16_t adc = sdk_system_adc_read();
+		uint16_t adc;
+		adc_read(&adc);
 
 		/* 1/8 fir filter */
 		sum = sum + adc - adc_data[i];
@@ -132,9 +154,9 @@ void pressure_task(void *pvParameters){
 		set_pressure(p);
 
 #ifdef DEBUG
-		printf("-----\np (%d) = %d\n", adc, p);
-		printf("alpha = %d\n", alpha);
-		printf("beta = %d\n", beta);
+		ESP_LOGI(TAG,"p (%d) = %d", adc, p);		
+		ESP_LOGI(TAG,"alpha = %d", alpha);
+		ESP_LOGI(TAG,"beta = %d", beta);
 #endif
 
 	}
