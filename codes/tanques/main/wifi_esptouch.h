@@ -15,6 +15,8 @@ extern EventGroupHandle_t s_wifi_event_group;
    but we only care about one event - are we connected
    to the AP with an IP? */
 extern int CONNECTED_BIT;
+extern int ESPTOUCH_DONE_BIT;
+extern int MQTT_CONNECTED_BIT;
 
 void configure_gpios(void);
 void initialise_wifi_touch(void);

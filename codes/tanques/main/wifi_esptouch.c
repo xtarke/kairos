@@ -38,11 +38,13 @@ EventGroupHandle_t s_wifi_event_group;
    but we only care about one event - are we connected
    to the AP with an IP? */
 const int CONNECTED_BIT = BIT0;
-static const int ESPTOUCH_DONE_BIT = BIT1;
+const int ESPTOUCH_DONE_BIT = BIT1;
+const int MQTT_CONNECTED_BIT = BIT2;
+
 static const char *TAG = "sc";
 
 /* Number of retries after SYSTEM_EVENT_STA_DISCONNECTED */
-#define MAXIMUM_RETRY  (5)
+#define MAXIMUM_RETRY  (50)
 static int s_retry_num = 0;
 
 void smartconfig_task(void * parm);
@@ -148,7 +150,7 @@ void configure_gpios(void){
     //set as output mode
     io_conf.mode = GPIO_MODE_OUTPUT;
     //bit mask of the pins that you want to set,e.g.GPIO15/16
-    io_conf.pin_bit_mask = ((1ULL << LED_HARTBEAT));
+    io_conf.pin_bit_mask = ((1ULL << LED_HARTBEAT) | (1ULL << 5));
     //disable pull-down mode
     io_conf.pull_down_en = 0;
     //disable pull-up mode

@@ -24,7 +24,7 @@
 static const char *TAG = "PRESURE";
 #endif
 
-uint16_t adc_data[8];
+uint16_t adc_data[8] = {0};
 
 void config_adc(){
 	// 1. init adc
@@ -37,8 +37,6 @@ void config_adc(){
     ESP_ERROR_CHECK(adc_init(&adc_config));
 }
 
-
-
 void adc_task(void *pvParameters){
 
 	int i = 0;	
@@ -50,7 +48,7 @@ void adc_task(void *pvParameters){
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 
 		/* Get ADC data */
-		uint16_t adc;
+		uint16_t adc = 5;
 		adc_read(&adc);
 
 		/* 1/8 fir filter */

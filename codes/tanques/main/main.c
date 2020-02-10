@@ -31,14 +31,10 @@
 #include "app_status.h"
 #include "wifi_esptouch.h"
 #include "pressure.h"
+#include "mqtt.h"
+#include "comm.h"
 
-// #include "aws.h"
-
-// #include "i2c_master.h"
-// #include "uart.h"
-
-// #include "Central.hpp"
-
+static const char *TAG = "INIT";
 
 void app_main()
 {
@@ -50,19 +46,26 @@ void app_main()
     }
     ESP_ERROR_CHECK(ret);
 
-    // init_i2c_master_system();
-    // init_uart1_system();
-    // init_aws_system();
+    ESP_LOGI(TAG, "[APP] Startup..");
+    ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
+    ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
+
+    esp_log_level_set("*", ESP_LOG_INFO);
 
     configure_gpios();
     config_adc();
     initialise_wifi_touch();
 
     app_status_init();
+    comm_init();
 
-    xTaskCreate(&adc_task, "adc_task", 256, NULL, 4, NULL);
+    mqtt_app_start();
+
+    xTaskCreate(&adc_task, "adc_task", 512, NULL, 4, NULL);
     xTaskCreate(&pressure_task, "pressure_task", 1024, NULL, 4, NULL);
     
+    xTaskCreate(&status_task, "tank_status_task", 2048, NULL, 4, NULL);
+
     // xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
     // xTaskCreate(central_task, "main_app_task", 4096, NULL, 10, NULL);
 

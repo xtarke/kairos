@@ -1,7 +1,7 @@
 /*
  * comm.c
  *
- *  Created on: Jan 3, 2018
+ *  Created on: Feb 10, 2020
  *      Author: Renan Augusto Starke
  */
 
@@ -11,15 +11,14 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "esp/uart.h"
+
+#include "driver/uart.h"
+#include "driver/gpio.h"
 
 #include "comm.h"
-
-#include "sysparam.h"
-#include "network.h"
 #include "app_status.h"
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
@@ -27,14 +26,29 @@
 #define debug(fmt, ...)
 #endif
 
+static const char *TAG = "RS485";
+
 #define TX_EN_PIN 5
 #define RS485_USART 0
+#define BUF_SIZE (128)
 
 TaskHandle_t xHandling_485_cmd_task;
 SemaphoreHandle_t rs485_data_mutex;
 
-
 void comm_init(){
+
+ 	// Configure parameters of an UART driver,
+    // communication pins and install the driver
+    uart_config_t uart_config = {
+        .baud_rate = 9600,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+    };
+    uart_param_config(UART_NUM_0, &uart_config);
+    uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
+
 	vSemaphoreCreateBinary(rs485_data_mutex);
 }
 
@@ -50,15 +64,21 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 	uint8_t i = 0;
 
 	/* Assert GPIO TX ENABLE PIN */
-	GPIO.OUT_SET = BIT(TX_EN_PIN);
+	//GPIO.OUT_SET = BIT(TX_EN_PIN);
+	gpio_set_level(TX_EN_PIN, 1);
+	
 	/* Copy data to CPU TX Fifo */
-	for (i=0; i < packet_size; i++)
-		uart_putc(0, packet_buffer[i]);
+	//for (i=0; i < packet_size; i++)
+	//	uart_putc(0, packet_buffer[i]);
+	uart_write_bytes(UART_NUM_0, (const char *) packet_buffer, packet_size);
 
 	/* Wait data to be sent */
-	uart_flush_txfifo(0);
+	//uart_flush_txfifo(0);
+	uart_wait_tx_done(UART_NUM_0, 3000);
+
 	/* Release RS485 Line */
-	GPIO.OUT_CLEAR = BIT(TX_EN_PIN);
+	//GPIO.OUT_CLEAR = BIT(TX_EN_PIN);
+	gpio_set_level(TX_EN_PIN, 0);
 
 }
 /**
@@ -72,27 +92,32 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
   */
 static uint8_t receive_data_rs485(uint8_t *rx_pkg, uint8_t packet_size, uint16_t timeout){
 
-	uint8_t error = 0;
-	TickType_t my_time;
+	uint8_t len = 0;
+	// TickType_t my_time;
 
-	my_time = xTaskGetTickCount();
-	/* Get received data */
-	for (int i=0; (i < packet_size);) {
-		int data = uart_getc_nowait(0);
+	// my_time = xTaskGetTickCount();
+	// /* Get received data */
+	// for (int i=0; (i < packet_size);) {
+	// 	int data = uart_getc_nowait(0);
 
-		if (data != -1){
-			rx_pkg[i] = data;
-			i++;
-			continue;
-		}
-		/* Timeout */
-		if (xTaskGetTickCount() > (my_time + timeout)){
-			error = 1;
-			break;
-		}
-	}
+	// 	if (data != -1){
+	// 		rx_pkg[i] = data;
+	// 		i++;
+	// 		continue;
+	// 	}
+	// 	/* Timeout */
+	// 	if (xTaskGetTickCount() > (my_time + timeout)){
+	// 		error = 1;
+	// 		break;
+	// 	}
+	// }
 
-	return error;
+	len = uart_read_bytes(UART_NUM_0, rx_pkg, packet_size, timeout / portTICK_RATE_MS);
+
+
+	ESP_LOGI(TAG,"Len: %d", len);
+
+	return len;
 }
 
 /**
@@ -133,7 +158,8 @@ void status_task(void *pvParameters)
     memset(rx_pkg, 0, sizeof(rx_pkg));
 
     /* Enable GPIO for 485 transceiver */
-    gpio_enable(TX_EN_PIN, GPIO_OUTPUT);
+    // gpio_enable(TX_EN_PIN, GPIO_OUTPUT);
+	// gpio_set_level(TX_EN_PIN, 1);
 
     while (1) {
        	vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -190,9 +216,6 @@ void status_task(void *pvParameters)
 				/* Atomic set */
 				set_temperature(temperature, error, i);
 				vTaskDelay(200 / portTICK_PERIOD_MS);
-                
-                
-                
        		}       	
 			i++;
 		}
@@ -201,47 +224,47 @@ void status_task(void *pvParameters)
 }
 
 
-void commands_task(void *pvParameters){
-	uint32_t ulNotifiedValue;
-	uint16_t crc16;
-	uint8_t pkg[] = {0x07, 0x06, 0x00, 0x0f, 0x00, 0x00, 0xcc, 0xcc, 0xff};
-	uint8_t rx_pkg[16] = {0}, error;
-	command_data_t rx_data;
+// void commands_task(void *pvParameters){
+// 	uint32_t ulNotifiedValue;
+// 	uint16_t crc16;
+// 	uint8_t pkg[] = {0x07, 0x06, 0x00, 0x0f, 0x00, 0x00, 0xcc, 0xcc, 0xff};
+// 	uint8_t rx_pkg[16] = {0}, error;
+// 	command_data_t rx_data;
 
-	while (1){
-		xTaskNotifyWait(pdFALSE,        /* Don't clear bits on entry. */
-					   ULONG_MAX,        /* Clear all bits on exit. */
-					   &ulNotifiedValue, /* Stores the notified value. */
-					   portMAX_DELAY);
+// 	while (1){
+// 		xTaskNotifyWait(pdFALSE,        /* Don't clear bits on entry. */
+// 					   ULONG_MAX,        /* Clear all bits on exit. */
+// 					   &ulNotifiedValue, /* Stores the notified value. */
+// 					   portMAX_DELAY);
 
-		debug("Topic Received\n");
+// 		debug("Topic Received\n");
 
-		while(xQueueReceive(command_queue, (void *)&rx_data, 0) == pdTRUE){
-			error = 0;
+// 		while(xQueueReceive(command_queue, (void *)&rx_data, 0) == pdTRUE){
+// 			error = 0;
 
-			/* Create a temperature set-point package */
-		  	pkg[0] = get_rs485_addr(0);
-			pkg[5] = rx_data.data & 0x00ff;
-			pkg[4] = rx_data.data >> 8;
-			crc16 = CRC16_2(pkg,6);
-			pkg[6] = crc16 & 0x00ff;
-			pkg[7] = (crc16 >> 8);
+// 			/* Create a temperature set-point package */
+// 		  	pkg[0] = get_rs485_addr(0);
+// 			pkg[5] = rx_data.data & 0x00ff;
+// 			pkg[4] = rx_data.data >> 8;
+// 			crc16 = CRC16_2(pkg,6);
+// 			pkg[6] = crc16 & 0x00ff;
+// 			pkg[7] = (crc16 >> 8);
 
-		  	if (xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ){
-				//send_data_rs485(pkg,9);
-				//error = receive_data_rs485(rx_pkg, 7, 50);
-				xSemaphoreGive(rs485_data_mutex);
-		  	} else
-		  		error = 2;
+// 		  	if (xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ){
+// 				//send_data_rs485(pkg,9);
+// 				//error = receive_data_rs485(rx_pkg, 7, 50);
+// 				xSemaphoreGive(rs485_data_mutex);
+// 		  	} else
+// 		  		error = 2;
 
-		  	/* Check CRC from received package */
-		  	crc16 = CRC16_2(rx_pkg,5);
-		  	if (rx_pkg[6] != (crc16 >> 8) || rx_pkg[5] != (crc16 & 0xff))
-		  		error = 3;
+// 		  	/* Check CRC from received package */
+// 		  	crc16 = CRC16_2(rx_pkg,5);
+// 		  	if (rx_pkg[6] != (crc16 >> 8) || rx_pkg[5] != (crc16 & 0xff))
+// 		  		error = 3;
 
-		  	if (error) {
-				printf("temperature set-point error: %d\n", error);
-		  	}
-		}
-	}
-}
+// 		  	if (error) {
+// 				printf("temperature set-point error: %d\n", error);
+// 		  	}
+// 		}
+// 	}
+// }
