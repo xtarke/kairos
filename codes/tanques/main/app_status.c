@@ -60,7 +60,7 @@ void app_status_init(){
 		err = nvs_get_i8(my_handle, sensors, &sensors);
 
 		if (err != ESP_OK) {
-			ESP_LOGI(TAG,"New sensor flash table\n");
+			ESP_LOGI(TAG,"New sensor flash table");
 			/* Enable bits:
 			bit:     4  3   2  1  0
 			sensor:  p  t3 t2  t1 t0

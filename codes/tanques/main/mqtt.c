@@ -48,7 +48,7 @@ static void  status_publish_task(void *pvParameters)
     
     if (err != ESP_OK) {
         ESP_LOGI(TAG,"Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-		strncpy(to_publish_data.topic,"host_1/temperatura/",PUB_TPC_LEN);
+		strncpy(to_publish_data.topic, "host_1/temperatrua/" ,PUB_TPC_LEN);
 		strncpy(to_publish_pressure.topic,"host_1/pressao/",PUB_TPC_LEN);
     } 
     else {

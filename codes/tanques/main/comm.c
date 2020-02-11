@@ -18,8 +18,6 @@
 #include "comm.h"
 #include "app_status.h"
 
-// #define DEBUG
-
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
 #else
@@ -74,7 +72,7 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
 
 	/* Wait data to be sent */
 	//uart_flush_txfifo(0);
-	uart_wait_tx_done(UART_NUM_0, 3000);
+	uart_wait_tx_done(UART_NUM_0, 0);
 
 	/* Release RS485 Line */
 	//GPIO.OUT_CLEAR = BIT(TX_EN_PIN);
@@ -91,33 +89,9 @@ static void send_data_rs485(uint8_t *packet_buffer, uint8_t packet_size){
   * @retval uint8_t: 0 if OK, 1 if error
   */
 static uint8_t receive_data_rs485(uint8_t *rx_pkg, uint8_t packet_size, uint16_t timeout){
-
-	uint8_t len = 0;
-	// TickType_t my_time;
-
-	// my_time = xTaskGetTickCount();
-	// /* Get received data */
-	// for (int i=0; (i < packet_size);) {
-	// 	int data = uart_getc_nowait(0);
-
-	// 	if (data != -1){
-	// 		rx_pkg[i] = data;
-	// 		i++;
-	// 		continue;
-	// 	}
-	// 	/* Timeout */
-	// 	if (xTaskGetTickCount() > (my_time + timeout)){
-	// 		error = 1;
-	// 		break;
-	// 	}
-	// }
-
-	len = uart_read_bytes(UART_NUM_0, rx_pkg, packet_size, timeout / portTICK_RATE_MS);
-
-
-	ESP_LOGI(TAG,"Len: %d", len);
-
-	return len;
+	uint8_t len = 0;	
+	len = uart_read_bytes(UART_NUM_0, rx_pkg, packet_size, timeout);
+	return !len;
 }
 
 /**
@@ -157,10 +131,6 @@ void status_task(void *pvParameters)
 
     memset(rx_pkg, 0, sizeof(rx_pkg));
 
-    /* Enable GPIO for 485 transceiver */
-    // gpio_enable(TX_EN_PIN, GPIO_OUTPUT);
-	// gpio_set_level(TX_EN_PIN, 1);
-
     while (1) {
        	vTaskDelay(1000 / portTICK_PERIOD_MS);
        	
@@ -176,18 +146,18 @@ void status_task(void *pvParameters)
 				pkg[3] = (crc16 >> 8);
 
 				if( xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ) {
-					send_data_rs485(pkg,5);
+					send_data_rs485(pkg,4);	
 					error = receive_data_rs485(rx_pkg, 13, 50);
 					xSemaphoreGive(rs485_data_mutex);
 				}
 				else
 					error = 2;
                 
-                /* Retiries up to 5 times with 485 errors */
+                /* Retries up to 5 times with 485 errors */
                 if (error == 1){
 					retries++;
                     
-					debug("485 error: %d %d\n", i, retries);
+					ESP_LOGI(TAG,"Error: %d %d\n", i, retries);
 					
 					if (retries < 5) continue;
 					else{
@@ -204,15 +174,9 @@ void status_task(void *pvParameters)
 				if (rx_pkg[12] != (0xff & (crc16 >> 8)) || rx_pkg[11] != (crc16 & 0xff))
 					error = 3;
 
-				if (!error) {
-		#ifdef DEBUGG
-				for (i=0; i < 13; i++)
-					printf("%x-", rx_pkg[i]);
-		#endif
-					temperature = (rx_pkg[3] << 8) | rx_pkg[4];
-				}else
-					debug("status error: %d %d\n", i, error);
-
+				if (!error)
+					temperature = (rx_pkg[3] << 8) | rx_pkg[4];			
+				
 				/* Atomic set */
 				set_temperature(temperature, error, i);
 				vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -222,49 +186,3 @@ void status_task(void *pvParameters)
        	
     }
 }
-
-
-// void commands_task(void *pvParameters){
-// 	uint32_t ulNotifiedValue;
-// 	uint16_t crc16;
-// 	uint8_t pkg[] = {0x07, 0x06, 0x00, 0x0f, 0x00, 0x00, 0xcc, 0xcc, 0xff};
-// 	uint8_t rx_pkg[16] = {0}, error;
-// 	command_data_t rx_data;
-
-// 	while (1){
-// 		xTaskNotifyWait(pdFALSE,        /* Don't clear bits on entry. */
-// 					   ULONG_MAX,        /* Clear all bits on exit. */
-// 					   &ulNotifiedValue, /* Stores the notified value. */
-// 					   portMAX_DELAY);
-
-// 		debug("Topic Received\n");
-
-// 		while(xQueueReceive(command_queue, (void *)&rx_data, 0) == pdTRUE){
-// 			error = 0;
-
-// 			/* Create a temperature set-point package */
-// 		  	pkg[0] = get_rs485_addr(0);
-// 			pkg[5] = rx_data.data & 0x00ff;
-// 			pkg[4] = rx_data.data >> 8;
-// 			crc16 = CRC16_2(pkg,6);
-// 			pkg[6] = crc16 & 0x00ff;
-// 			pkg[7] = (crc16 >> 8);
-
-// 		  	if (xSemaphoreTake(rs485_data_mutex, portMAX_DELAY) == pdTRUE ){
-// 				//send_data_rs485(pkg,9);
-// 				//error = receive_data_rs485(rx_pkg, 7, 50);
-// 				xSemaphoreGive(rs485_data_mutex);
-// 		  	} else
-// 		  		error = 2;
-
-// 		  	/* Check CRC from received package */
-// 		  	crc16 = CRC16_2(rx_pkg,5);
-// 		  	if (rx_pkg[6] != (crc16 >> 8) || rx_pkg[5] != (crc16 & 0xff))
-// 		  		error = 3;
-
-// 		  	if (error) {
-// 				printf("temperature set-point error: %d\n", error);
-// 		  	}
-// 		}
-// 	}
-// }

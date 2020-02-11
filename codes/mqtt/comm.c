@@ -19,7 +19,7 @@
 #include "network.h"
 #include "app_status.h"
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define debug(fmt, ...) printf(fmt, ## __VA_ARGS__)
@@ -210,7 +210,7 @@ void commands_task(void *pvParameters){
 
 	while (1){
 		xTaskNotifyWait(pdFALSE,        /* Don't clear bits on entry. */
-					   ULONG_MAX,        /* Clear all bits on exit. */
+					   3333,        /* Clear all bits on exit. */
 					   &ulNotifiedValue, /* Stores the notified value. */
 					   portMAX_DELAY);
 

@@ -62,12 +62,7 @@ void app_main()
     mqtt_app_start();
 
     xTaskCreate(&adc_task, "adc_task", 512, NULL, 4, NULL);
-    xTaskCreate(&pressure_task, "pressure_task", 1024, NULL, 4, NULL);
-    
+    xTaskCreate(&pressure_task, "pressure_task", 1024, NULL, 4, NULL);    
     xTaskCreate(&status_task, "tank_status_task", 2048, NULL, 4, NULL);
-
-    // xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
-    // xTaskCreate(central_task, "main_app_task", 4096, NULL, 10, NULL);
-
     
 }

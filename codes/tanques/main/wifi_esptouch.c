@@ -41,7 +41,7 @@ const int CONNECTED_BIT = BIT0;
 const int ESPTOUCH_DONE_BIT = BIT1;
 const int MQTT_CONNECTED_BIT = BIT2;
 
-static const char *TAG = "sc";
+static const char *TAG = "WIFI";
 
 /* Number of retries after SYSTEM_EVENT_STA_DISCONNECTED */
 #define MAXIMUM_RETRY  (50)
@@ -58,11 +58,19 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_STA_START:
         ESP_LOGI(TAG,"SYSTEM_EVENT_STA_START");
         
+        wifi_config_t cfg;
+        err =  esp_wifi_get_config(ESP_IF_WIFI_STA, &cfg);
+        ESP_LOGI(TAG,"%s in esp_wifi_get_config", esp_err_to_name(err));
+
+        ESP_LOGI(TAG,"SSID: %s", cfg.sta.ssid);
+        ESP_LOGI(TAG,"PASS: %s", cfg.sta.password);
+
+
         err = esp_wifi_connect();
-        ESP_LOGI(TAG,"%s in SYSTEM_EVENT_STA_START handle!\n", esp_err_to_name(err));
+        ESP_LOGI(TAG,"%d in SYSTEM_EVENT_STA_START handle!\n", err);
 
         /* SSID not configured: run ESP touch */
-        if (err == ESP_ERR_WIFI_SSID){
+        if (cfg.sta.ssid[0] == 0){
             xTaskCreate(smartconfig_task, "smartconfig_task", 4096, NULL, 3, NULL);
         }
         break;
@@ -102,7 +110,7 @@ void initialise_wifi_touch(void)
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 
-     xTaskCreate(&hearbeat_task, "led_task",  256, NULL, 3, NULL);
+    xTaskCreate(&hearbeat_task, "led_task",  256, NULL, 3, NULL);
 }
 
 static void sc_callback(smartconfig_status_t status, void *pdata)
