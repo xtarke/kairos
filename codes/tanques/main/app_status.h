@@ -48,4 +48,6 @@ void set_pressure_enable();
 void set_pressure_disable();
 uint8_t is_pressure_enable();
 
+uint8_t save_enable(uint8_t i);
+
 #endif /* APP_STATUS_H_ */

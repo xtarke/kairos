@@ -25,7 +25,7 @@
 
 #include "nvs.h"
 #include "nvs_flash.h"
-
+#include "driver/gpio.h"
 
 /* Custom includes */
 #include "app_status.h"
@@ -34,7 +34,50 @@
 #include "mqtt.h"
 #include "comm.h"
 
+#define LED_HARTBEAT (4)
+
 static const char *TAG = "INIT";
+
+static void  hearbeat_task(void *pvParameters)
+{
+  volatile EventBits_t uxBits;
+
+  while(1) {
+      uxBits = xEventGroupGetBits(s_wifi_event_group);
+      
+      if((uxBits & CONNECTED_BIT) | (uxBits & MQTT_CONNECTED_BIT)){
+          gpio_set_level(LED_HARTBEAT, 1);
+          vTaskDelay(1000 / portTICK_PERIOD_MS);
+          gpio_set_level(LED_HARTBEAT, 0);
+          vTaskDelay(1000 / portTICK_PERIOD_MS);
+      } else
+      {
+          gpio_set_level(LED_HARTBEAT, 1);
+          vTaskDelay(200 / portTICK_PERIOD_MS);
+          gpio_set_level(LED_HARTBEAT, 0);
+          vTaskDelay(200 / portTICK_PERIOD_MS);
+      }
+  }
+}
+
+void configure_gpios(void){
+    gpio_config_t io_conf;
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins to set
+    io_conf.pin_bit_mask = ((1ULL << LED_HARTBEAT) | (1ULL << TX_EN_PIN));
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    gpio_set_level(LED_HARTBEAT, 1);
+}
+
 
 void app_main()
 {
@@ -54,10 +97,11 @@ void app_main()
 
     configure_gpios();
     config_adc();
+    app_status_init();
+    comm_init();    
     initialise_wifi_touch();
 
-    app_status_init();
-    comm_init();
+    xTaskCreate(&hearbeat_task, "led_task",  256, NULL, 3, NULL);
 
     mqtt_app_start();
 

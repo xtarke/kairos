@@ -27,9 +27,9 @@
 #include "nvs_flash.h"
 #include "tcpip_adapter.h"
 #include "esp_smartconfig.h"
-#include "driver/gpio.h"
 
-#define LED_HARTBEAT (4)
+#include "driver/uart.h"
+#include "app_status.h"
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 EventGroupHandle_t s_wifi_event_group;
@@ -48,27 +48,63 @@ static const char *TAG = "WIFI";
 static int s_retry_num = 0;
 
 void smartconfig_task(void * parm);
-static void  hearbeat_task(void *pvParameters);
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
+    int len = 1;
+    unsigned char data[64];
+    wifi_config_t cfg;
     esp_err_t err;
 
     switch(event->event_id) {
     case SYSTEM_EVENT_STA_START:
-        ESP_LOGI(TAG,"SYSTEM_EVENT_STA_START");
         
-        wifi_config_t cfg;
         err =  esp_wifi_get_config(ESP_IF_WIFI_STA, &cfg);
+
+        ESP_LOGI(TAG,"Wating 10s for configuration...");
+        
+        while (len != 0){        
+            len = uart_read_bytes(UART_NUM_0, data, 1, 10000  / portTICK_RATE_MS);
+            
+            if (len != 0){
+                switch (data[0]){
+                    case 'w':
+                        ESP_LOGI(TAG,"Wifi RESET...");
+                        cfg.sta.ssid[0] = 0;
+                        break;
+                    case '0':
+                        ESP_LOGI(TAG,"Set/Unset sensor 0");
+                        save_enable(0);
+                        break;
+                    case '1':
+                        ESP_LOGI(TAG,"Set/Unset sensor 1");
+                        save_enable(1);
+                        break;
+                    case '2':
+                        ESP_LOGI(TAG,"Set/Unset sensor 2");
+                        save_enable(2);
+                        break;
+                    case '3':
+                        save_enable(3);
+                        ESP_LOGI(TAG,"Set/Unset sensor 3");
+                        break;
+                    case 'p':
+                        save_enable(4);
+                        ESP_LOGI(TAG,"Set/Unset pressure sensor");
+                        break;
+                    default: 
+                        break;
+                }
+            }
+        }
+        
         ESP_LOGI(TAG,"%s in esp_wifi_get_config", esp_err_to_name(err));
 
         ESP_LOGI(TAG,"SSID: %s", cfg.sta.ssid);
         ESP_LOGI(TAG,"PASS: %s", cfg.sta.password);
 
-
         err = esp_wifi_connect();
-        ESP_LOGI(TAG,"%d in SYSTEM_EVENT_STA_START handle!\n", err);
-
+        
         /* SSID not configured: run ESP touch */
         if (cfg.sta.ssid[0] == 0){
             xTaskCreate(smartconfig_task, "smartconfig_task", 4096, NULL, 3, NULL);
@@ -110,7 +146,6 @@ void initialise_wifi_touch(void)
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 
-    xTaskCreate(&hearbeat_task, "led_task",  256, NULL, 3, NULL);
 }
 
 static void sc_callback(smartconfig_status_t status, void *pdata)
@@ -149,46 +184,6 @@ static void sc_callback(smartconfig_status_t status, void *pdata)
         default:
             break;
     }
-}
-
-void configure_gpios(void){
-    gpio_config_t io_conf;
-    //disable interrupt
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    //set as output mode
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO15/16
-    io_conf.pin_bit_mask = ((1ULL << LED_HARTBEAT) | (1ULL << 5));
-    //disable pull-down mode
-    io_conf.pull_down_en = 0;
-    //disable pull-up mode
-    io_conf.pull_up_en = 0;
-    //configure GPIO with the given settings
-    gpio_config(&io_conf);
-
-    gpio_set_level(LED_HARTBEAT, 1);
-}
-
-static void  hearbeat_task(void *pvParameters)
-{
-    EventBits_t uxBits;
-
-    while(1) {
-        uxBits = xEventGroupGetBits(s_wifi_event_group);
-
-        if(uxBits & CONNECTED_BIT){
-            gpio_set_level(LED_HARTBEAT, 1);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            gpio_set_level(LED_HARTBEAT, 0);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-        } else
-        {
-            gpio_set_level(LED_HARTBEAT, 1);
-            vTaskDelay(200 / portTICK_PERIOD_MS);
-            gpio_set_level(LED_HARTBEAT, 0);
-            vTaskDelay(200 / portTICK_PERIOD_MS);
-        }
-	}
 }
 
 void smartconfig_task(void * parm)

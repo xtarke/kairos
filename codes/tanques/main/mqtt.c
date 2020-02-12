@@ -43,13 +43,14 @@ static void  status_publish_task(void *pvParameters)
 	esp_err_t err;
     nvs_handle my_handle;
 
+    ESP_LOGI(TAG,"Config host name is: %s", CONFIG_HOST_NAME);
     /* Open NVS (Non-Volatile Storage) */
-    err = nvs_open("storage", NVS_READWRITE, &my_handle);
-    
+    /* err = nvs_open("storage", NVS_READWRITE, &my_handle);
+       
     if (err != ESP_OK) {
-        ESP_LOGI(TAG,"Error (%s) opening NVS handle!\n", esp_err_to_name(err));
-		strncpy(to_publish_data.topic, "host_1/temperatrua/" ,PUB_TPC_LEN);
-		strncpy(to_publish_pressure.topic,"host_1/pressao/",PUB_TPC_LEN);
+        ESP_LOGI(TAG,"Error (%s) opening NVS handle!", esp_err_to_name(err));
+		strncpy(to_publish_data.topic, CONFIG_HOST_NAME"/temperatrua/" ,PUB_TPC_LEN);
+		strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);
     } 
     else {
         size_t required_size;
@@ -72,14 +73,18 @@ static void  status_publish_task(void *pvParameters)
         else
         {
             ESP_LOGI(TAG, "Invalid host name\n");
-		    strncpy(to_publish_data.topic,"host_1/temperatura/",PUB_TPC_LEN);
-		    strncpy(to_publish_pressure.topic,"host_1/pressao/",PUB_TPC_LEN);   
+		    strncpy(to_publish_data.topic,CONFIG_HOST_NAME"/temperatura/",PUB_TPC_LEN);
+		    strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);   
         }
         
         nvs_close(my_handle);
-    } 
-  
+    }*/
+
+    /* ToDo: Use NVS to reconfigure and a service */ 
+    strncpy(to_publish_data.topic,CONFIG_HOST_NAME"/temperatura/0",PUB_TPC_LEN);
+    strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN); 
     ESP_LOGI(TAG,"Topics are %s", to_publish_data.topic);
+
     while (1) {
         vTaskDelayUntil(&xLastWakeTime, 10000 / portTICK_PERIOD_MS);
         xEventGroupWaitBits(s_wifi_event_group, MQTT_CONNECTED_BIT, false, true, portMAX_DELAY);
@@ -89,7 +94,7 @@ static void  status_publish_task(void *pvParameters)
         	uint8_t error = get_pressure_error();
 
         	snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d.%d;%d", pressure/1000, pressure%1000, error);		
-            msg_id = esp_mqtt_client_publish(client, to_publish_data.topic, to_publish_data.data, 0, 1, 0);
+            msg_id = esp_mqtt_client_publish(client, to_publish_pressure.topic, to_publish_pressure.data, 0, 1, 0);
 		}
 
         for (int i=0; i < MAX_485_SENSORS; i++){
@@ -229,6 +234,8 @@ void mqtt_app_start(void)
     esp_mqtt_client_config_t mqtt_cfg = {
         .uri = CONFIG_BROKER_URL,
         .event_handle = mqtt_event_handler,
+        .username = CONFIG_BROKER_USER,
+        .password = CONFIG_BROKER_PASS
         // .user_context = (void *)your_context
     };
 
@@ -239,13 +246,6 @@ void mqtt_app_start(void)
     client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_start(client);
 
-    xTaskCreate(&status_publish_task, "status_publish_task", 1024, NULL, 6, NULL);
+    xTaskCreate(&status_publish_task, "status_publish_task", 2048, NULL, 6, NULL);
 
 }
-
-// void __app_main()
-// {
-//     nvs_flash_init();
-//     wifi_init();
-//     mqtt_app_start();
-// }

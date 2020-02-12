@@ -57,7 +57,7 @@ void app_status_init(){
 	 if (err != ESP_OK) {
         ESP_LOGI(TAG,"Error (%s) opening NVS handle!\n", esp_err_to_name(err));
 	 } else{
-		err = nvs_get_i8(my_handle, sensors, &sensors);
+		err = nvs_get_i8(my_handle, "sensors", &sensors);
 
 		if (err != ESP_OK) {
 			ESP_LOGI(TAG,"New sensor flash table");
@@ -322,4 +322,39 @@ uint8_t get_enable(uint8_t i){
 	return enable;
 }
 
+uint8_t save_enable(uint8_t i){
+
+	esp_err_t err;
+    nvs_handle my_handle;
+	int8_t sensors = 0;
+
+    if (i > MAX_485_SENSORS)
+		return 0;	
+	
+	/* Open NVS (Non-Volatile Storage) */
+    err = nvs_open("storage", NVS_READWRITE, &my_handle);
+
+	if (err != ESP_OK) {
+        ESP_LOGI(TAG,"Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+		return 0;
+	} else{
+		err = nvs_get_i8(my_handle, "sensors", &sensors);
+
+		CPL_BIT(sensors,i);
+		/* Enable bits:
+		bit:     4  3   2  1  0
+		sensor:  p  t3 t2  t1 t0
+		default is: pressure, t0 and t1 : 0x13 */
+		nvs_set_i8(my_handle, "sensors", sensors);
+		
+		if (TST_BIT(sensors,i))
+			set_enable(i);
+		else
+			unset_enable(i);
+		
+		nvs_close(my_handle);
+	}
+
+	return 1;
+}
 

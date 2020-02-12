@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#define TX_EN_PIN (5)
+
 typedef struct command_data{
 	uint8_t cmd;
 	uint32_t data;

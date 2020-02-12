@@ -26,8 +26,7 @@
 
 static const char *TAG = "RS485";
 
-#define TX_EN_PIN 5
-#define RS485_USART 0
+#define RS485_USART (0)
 #define BUF_SIZE (128)
 
 TaskHandle_t xHandling_485_cmd_task;
@@ -168,7 +167,6 @@ void status_task(void *pvParameters)
 						continue;
 					}
                 }
-
 				/* Check CRC from received package */
 				crc16 = CRC16_2(rx_pkg,11);
 				if (rx_pkg[12] != (0xff & (crc16 >> 8)) || rx_pkg[11] != (crc16 & 0xff))

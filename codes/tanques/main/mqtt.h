@@ -9,7 +9,7 @@
 #define MQTT_H_
 
 #define PUB_MSG_LEN 16
-#define PUB_TPC_LEN 24
+#define PUB_TPC_LEN 64
 #define CFG_TOPICS 7
 
 typedef struct publisher_data{
