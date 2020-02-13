@@ -27,148 +27,152 @@
 static const char *TAG = "MQTT";
 esp_mqtt_client_handle_t client;
 
-static void  status_publish_task(void *pvParameters)
+static void status_publish_task(void *pvParameters)
 {
-	int msg_id;
+    int msg_id;
     int len;
-	TickType_t xLastWakeTime = xTaskGetTickCount();
+    TickType_t xLastWakeTime = xTaskGetTickCount();
 
-	temperature_stauts_t myData = {0,0};
+    temperature_stauts_t myData = {0, 0};
     publisher_data_t to_publish_data;
     publisher_data_t to_publish_pressure;
 
     memset(&to_publish_pressure, 0, sizeof(to_publish_pressure));
     memset(&to_publish_data, 0, sizeof(to_publish_data));
 
-	esp_err_t err;
+    esp_err_t err;
     nvs_handle my_handle;
 
-    ESP_LOGI(TAG,"Config host name is: %s", CONFIG_HOST_NAME);
+    ESP_LOGI(TAG, "Config host name is: %s", CONFIG_HOST_NAME);
     /* Open NVS (Non-Volatile Storage) */
     /* err = nvs_open("storage", NVS_READWRITE, &my_handle);
-       
-    if (err != ESP_OK) {
-        ESP_LOGI(TAG,"Error (%s) opening NVS handle!", esp_err_to_name(err));
-		strncpy(to_publish_data.topic, CONFIG_HOST_NAME"/temperatrua/" ,PUB_TPC_LEN);
-		strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);
-    } 
-    else {
-        size_t required_size;
-        err = nvs_get_str(my_handle, "hostname", NULL, &required_size);
-        
-        if (err == ESP_OK){       
-            char * wifi_my_host_name = malloc(required_size);
-            nvs_get_str(my_handle, "hostname", wifi_my_host_name, &required_size);
 
-            ESP_LOGI(TAG,"hostname is %s", wifi_my_host_name);
-            
-            strncpy(to_publish_data.topic, wifi_my_host_name,PUB_TPC_LEN);
-	        strncpy(to_publish_pressure.topic, wifi_my_host_name,PUB_TPC_LEN);
-	        free(wifi_my_host_name);
-	        strncat(to_publish_data.topic,"/temperatura/0",PUB_TPC_LEN);
-	        strncat(to_publish_pressure.topic,"/pressao",PUB_TPC_LEN);
-            
-            free(wifi_my_host_name);
-        }
-        else
-        {
-            ESP_LOGI(TAG, "Invalid host name\n");
-		    strncpy(to_publish_data.topic,CONFIG_HOST_NAME"/temperatura/",PUB_TPC_LEN);
-		    strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);   
-        }
-        
-        nvs_close(my_handle);
-    }*/
+if (err != ESP_OK) {
+ESP_LOGI(TAG,"Error (%s) opening NVS handle!", esp_err_to_name(err));
+strncpy(to_publish_data.topic, CONFIG_HOST_NAME"/temperatrua/" ,PUB_TPC_LEN);
+strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);
+} 
+else {
+size_t required_size;
+err = nvs_get_str(my_handle, "hostname", NULL, &required_size);
 
-    /* ToDo: Use NVS to reconfigure and a service */ 
-    strncpy(to_publish_data.topic,CONFIG_HOST_NAME"/temperatura/0",PUB_TPC_LEN);
-    strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN); 
-    ESP_LOGI(TAG,"Topics are %s", to_publish_data.topic);
+if (err == ESP_OK){       
+char * wifi_my_host_name = malloc(required_size);
+nvs_get_str(my_handle, "hostname", wifi_my_host_name, &required_size);
 
-    while (1) {
+ESP_LOGI(TAG,"hostname is %s", wifi_my_host_name);
+
+strncpy(to_publish_data.topic, wifi_my_host_name,PUB_TPC_LEN);
+strncpy(to_publish_pressure.topic, wifi_my_host_name,PUB_TPC_LEN);
+free(wifi_my_host_name);
+strncat(to_publish_data.topic,"/temperatura/0",PUB_TPC_LEN);
+strncat(to_publish_pressure.topic,"/pressao",PUB_TPC_LEN);
+
+free(wifi_my_host_name);
+}
+else
+{
+ESP_LOGI(TAG, "Invalid host name\n");
+strncpy(to_publish_data.topic,CONFIG_HOST_NAME"/temperatura/",PUB_TPC_LEN);
+strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);   
+}
+
+nvs_close(my_handle);
+}*/
+
+    /* ToDo: Use NVS to reconfigure and a service */
+    strncpy(to_publish_data.topic, CONFIG_HOST_NAME "/temperatura/0", PUB_TPC_LEN);
+    strncpy(to_publish_pressure.topic, CONFIG_HOST_NAME "/pressao/", PUB_TPC_LEN);
+    ESP_LOGI(TAG, "Topics are %s", to_publish_data.topic);
+
+    while (1)
+    {
         vTaskDelayUntil(&xLastWakeTime, 10000 / portTICK_PERIOD_MS);
         xEventGroupWaitBits(s_wifi_event_group, MQTT_CONNECTED_BIT, false, true, portMAX_DELAY);
-       
-        if (is_pressure_enable()){
-			uint32_t pressure = get_pressure();
-        	uint8_t error = get_pressure_error();
 
-        	snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d.%d;%d", pressure/1000, pressure%1000, error);		
+        if (is_pressure_enable())
+        {
+            uint32_t pressure = get_pressure();
+            uint8_t error = get_pressure_error();
+
+            snprintf(to_publish_pressure.data, PUB_MSG_LEN, "%d.%d;%d", pressure / 1000, pressure % 1000, error);
             msg_id = esp_mqtt_client_publish(client, to_publish_pressure.topic, to_publish_pressure.data, 0, 1, 0);
-		}
+        }
 
-        for (int i=0; i < MAX_485_SENSORS; i++){
+        for (int i = 0; i < MAX_485_SENSORS; i++)
+        {
 
-        	if (get_enable(i)) {
-        		len = strnlen(to_publish_data.topic, PUB_TPC_LEN);
-        		to_publish_data.topic[len-1] = '0' + i;
+            if (get_enable(i))
+            {
+                len = strnlen(to_publish_data.topic, PUB_TPC_LEN);
+                to_publish_data.topic[len - 1] = '0' + i;
 
-        		get_temperature(i, &myData);
+                get_temperature(i, &myData);
 
-        		int fraction = myData.temperature % 10;
-        		if (fraction < 0)
-        			fraction = -fraction;
+                int fraction = myData.temperature % 10;
+                if (fraction < 0)
+                    fraction = -fraction;
 
-				snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d;%d", myData.temperature/10, fraction, myData.error);
+                snprintf(to_publish_data.data, PUB_MSG_LEN, "%d.%d;%d", myData.temperature / 10, fraction, myData.error);
                 msg_id = esp_mqtt_client_publish(client, to_publish_data.topic, to_publish_data.data, 0, 1, 0);
 
-				vTaskDelayUntil(&xLastWakeTime, 1000 / portTICK_PERIOD_MS);
-        	}
+                vTaskDelayUntil(&xLastWakeTime, 1000 / portTICK_PERIOD_MS);
+            }
         }
     }
 }
-
 
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
     // your_context_t *context = event->context;
-    switch (event->event_id) {
-        case MQTT_EVENT_CONNECTED:
-            
-            xEventGroupSetBits(s_wifi_event_group, MQTT_CONNECTED_BIT);
-            
-            // ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-            // msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
-            // ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+    switch (event->event_id)
+    {
+    case MQTT_EVENT_CONNECTED:
 
-            // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
-            // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        xEventGroupSetBits(s_wifi_event_group, MQTT_CONNECTED_BIT);
 
-            // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-            // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        // ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+        // msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
+        // ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
 
-            // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-            // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
-            break;
-        case MQTT_EVENT_DISCONNECTED:
-            xEventGroupClearBits(s_wifi_event_group, MQTT_CONNECTED_BIT);
-            
-            ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
-            break;
+        // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
+        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        case MQTT_EVENT_SUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-            msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-            break;
-        case MQTT_EVENT_UNSUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
-            break;
-        case MQTT_EVENT_PUBLISHED:
-            //ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-            break;
-        case MQTT_EVENT_DATA:
-            ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-            printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-            printf("DATA=%.*s\r\n", event->data_len, event->data);
-            break;
-        case MQTT_EVENT_ERROR:
-            xEventGroupClearBits(s_wifi_event_group, MQTT_CONNECTED_BIT);
-            
-            ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
-            break;
+        // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
+        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+
+        // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
+        // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
+        break;
+    case MQTT_EVENT_DISCONNECTED:
+        xEventGroupClearBits(s_wifi_event_group, MQTT_CONNECTED_BIT);
+
+        ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        break;
+
+    case MQTT_EVENT_SUBSCRIBED:
+        ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
+        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        break;
+    case MQTT_EVENT_UNSUBSCRIBED:
+        ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+        break;
+    case MQTT_EVENT_PUBLISHED:
+        //ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        break;
+    case MQTT_EVENT_DATA:
+        ESP_LOGI(TAG, "MQTT_EVENT_DATA");
+        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        break;
+    case MQTT_EVENT_ERROR:
+        xEventGroupClearBits(s_wifi_event_group, MQTT_CONNECTED_BIT);
+
+        ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+        break;
     }
     return ESP_OK;
 }
@@ -177,7 +181,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 // {
 //     /* For accessing reason codes in case of disconnection */
 //     system_event_info_t *info = &event->event_info;
-    
+
 //     switch (event->event_id) {
 //         case SYSTEM_EVENT_STA_START:
 //             esp_wifi_connect();
@@ -247,5 +251,4 @@ void mqtt_app_start(void)
     esp_mqtt_client_start(client);
 
     xTaskCreate(&status_publish_task, "status_publish_task", 2048, NULL, 6, NULL);
-
 }
