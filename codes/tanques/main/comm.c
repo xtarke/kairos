@@ -133,9 +133,9 @@ void status_task(void *pvParameters)
     while (1) {
        	vTaskDelay(1000 / portTICK_PERIOD_MS);
        	
-		for (int i=0; i < MAX_485_SENSORS;){            
+	for (int i=0; i < MAX_485_SENSORS;){            
             error = 0;
-       		vTaskDelay(100 / portTICK_PERIOD_MS);
+    		vTaskDelay(100 / portTICK_PERIOD_MS);
        		if (get_enable(i)) {
 
 				/* Update pkg address and CRC */
@@ -156,7 +156,7 @@ void status_task(void *pvParameters)
                 if (error == 1){
 					retries++;
                     
-					ESP_LOGI(TAG,"Error: %d %d\n", i, retries);
+					ESP_LOGI(TAG,"Error: %d %d", i, retries);
 					
 					if (retries < 5) continue;
 					else{
