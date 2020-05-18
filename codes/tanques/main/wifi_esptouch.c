@@ -7,7 +7,7 @@
     *  Unless required by applicable law or agreed to in writing, this
     *  software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
     *  CONDITIONS OF ANY KIND, either express or implied.
-    *      
+    *
     *  Modifications on: Dec 23, 2019
     *      Author: Renan Augusto Starke
     *
@@ -127,7 +127,8 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         {
             err = esp_wifi_connect();
             xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
-            s_retry_num++;
+            /* Try to connect forever
+            s_retry_num++; */
             ESP_LOGI(TAG, "retry to connect to the AP: %s", esp_err_to_name(err));
         }
         ESP_LOGI(TAG, "connect to the AP fail\n");
