@@ -51,12 +51,12 @@ if (err != ESP_OK) {
 ESP_LOGI(TAG,"Error (%s) opening NVS handle!", esp_err_to_name(err));
 strncpy(to_publish_data.topic, CONFIG_HOST_NAME"/temperatrua/" ,PUB_TPC_LEN);
 strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);
-} 
+}
 else {
 size_t required_size;
 err = nvs_get_str(my_handle, "hostname", NULL, &required_size);
 
-if (err == ESP_OK){       
+if (err == ESP_OK){
 char * wifi_my_host_name = malloc(required_size);
 nvs_get_str(my_handle, "hostname", wifi_my_host_name, &required_size);
 
@@ -74,7 +74,7 @@ else
 {
 ESP_LOGI(TAG, "Invalid host name\n");
 strncpy(to_publish_data.topic,CONFIG_HOST_NAME"/temperatura/",PUB_TPC_LEN);
-strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);   
+strncpy(to_publish_pressure.topic,CONFIG_HOST_NAME"/pressao/",PUB_TPC_LEN);
 }
 
 nvs_close(my_handle);
@@ -127,6 +127,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
     // your_context_t *context = event->context;
+
+    char sub_topic[] = CONFIG_HOST_NAME "/config";
+
     switch (event->event_id)
     {
     case MQTT_EVENT_CONNECTED:
@@ -140,8 +143,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
         // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "set config topic=%s", sub_topic);
+        msg_id = esp_mqtt_client_subscribe(client, sub_topic, 1);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
         // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
@@ -153,9 +157,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
-        ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        /* ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
         msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);*/
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
@@ -164,9 +168,32 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         //ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
         break;
     case MQTT_EVENT_DATA:
-        ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        // printf("DATA=%.*s\r\n", event->data_len, event->data);
+        switch (event->data[0])
+        {
+          case '0':
+              ESP_LOGI(TAG, "Set/Unset sensor 0");
+              save_enable(0);
+              break;
+          case '1':
+              ESP_LOGI(TAG, "Set/Unset sensor 1");
+              save_enable(1);
+              break;
+          case '2':
+              ESP_LOGI(TAG, "Set/Unset sensor 2");
+              save_enable(2);
+              break;
+          case '3':
+              save_enable(3);
+              ESP_LOGI(TAG, "Set/Unset sensor 3");
+              break;
+          case 'p':
+              save_enable(4);
+              ESP_LOGI(TAG, "Set/Unset pressure sensor");
+              break;
+          default:
+              break;
+          }
         break;
     case MQTT_EVENT_ERROR:
         xEventGroupClearBits(s_wifi_event_group, MQTT_CONNECTED_BIT);
@@ -176,56 +203,6 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     }
     return ESP_OK;
 }
-
-// static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
-// {
-//     /* For accessing reason codes in case of disconnection */
-//     system_event_info_t *info = &event->event_info;
-
-//     switch (event->event_id) {
-//         case SYSTEM_EVENT_STA_START:
-//             esp_wifi_connect();
-//             break;
-//         case SYSTEM_EVENT_STA_GOT_IP:
-//             xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-
-//             break;
-//         case SYSTEM_EVENT_STA_DISCONNECTED:
-//             ESP_LOGE(TAG, "Disconnect reason : %d", info->disconnected.reason);
-//             if (info->disconnected.reason == WIFI_REASON_BASIC_RATE_NOT_SUPPORT) {
-//                 /*Switch to 802.11 bgn mode */
-//                 esp_wifi_set_protocol(ESP_IF_WIFI_STA, WIFI_PROTOCAL_11B | WIFI_PROTOCAL_11G | WIFI_PROTOCAL_11N);
-//             }
-//             esp_wifi_connect();
-//             xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-//             break;
-//         default:
-//             break;
-//     }
-//     return ESP_OK;
-// }
-
-// static void wifi_init(void)
-// {
-//     tcpip_adapter_init();
-//     wifi_event_group = xEventGroupCreate();
-//     ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
-//     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-//     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-//     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-//     wifi_config_t wifi_config = {
-//         .sta = {
-//             .ssid = CONFIG_WIFI_SSID,
-//             .password = CONFIG_WIFI_PASSWORD,
-//         },
-//     };
-//     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-//     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-//     ESP_LOGI(TAG, "start the WIFI SSID:[%s]", CONFIG_WIFI_SSID);
-//     ESP_ERROR_CHECK(esp_wifi_start());
-//     ESP_LOGI(TAG, "Waiting for wifi");
-//     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
-// }
 
 void mqtt_app_start(void)
 {
