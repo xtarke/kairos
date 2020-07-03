@@ -171,6 +171,10 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         // printf("DATA=%.*s\r\n", event->data_len, event->data);
         switch (event->data[0])
         {
+          case 'w':
+              ESP_LOGI(TAG, "WiFi reset...");
+              set_reset_wifi(1);
+              break;
           case '0':
               ESP_LOGI(TAG, "Set/Unset sensor 0");
               save_enable(0);

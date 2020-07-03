@@ -1,7 +1,7 @@
 
 /**
  * @file main.c
- * @brief Kairos ESP8266 
+ * @brief Kairos ESP8266
  *
  *
  *
@@ -108,5 +108,4 @@ void app_main()
     xTaskCreate(&adc_task, "adc_task", 512, NULL, 4, NULL);
     xTaskCreate(&pressure_task, "pressure_task", 1024, NULL, 4, NULL);
     xTaskCreate(&status_task, "tank_status_task", 2048, NULL, 4, NULL);
-
 }

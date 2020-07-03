@@ -44,7 +44,7 @@ const int MQTT_CONNECTED_BIT = BIT2;
 static const char *TAG = "WIFI";
 
 /* Number of retries after SYSTEM_EVENT_STA_DISCONNECTED */
-#define MAXIMUM_RETRY (50)
+#define MAXIMUM_RETRY (20)
 static int s_retry_num = 0;
 
 void smartconfig_task(void *parm);
@@ -102,6 +102,12 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
             }
         }
 
+        if (get_reset_wifi()) {
+          ESP_LOGI(TAG, "Wifi RESET from MQTT...");
+          set_reset_wifi(0);
+          cfg.sta.ssid[0] = 0;
+        }
+
         ESP_LOGI(TAG, "%s in esp_wifi_get_config", esp_err_to_name(err));
 
         ESP_LOGI(TAG, "SSID: %s", cfg.sta.ssid);
@@ -122,18 +128,17 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         s_retry_num = 0;
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-
         if (s_retry_num < MAXIMUM_RETRY)
         {
             err = esp_wifi_connect();
             xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
-            /* Try to connect forever
-            s_retry_num++; */
+            s_retry_num++;
             ESP_LOGI(TAG, "retry to connect to the AP: %s", esp_err_to_name(err));
         }
-        ESP_LOGI(TAG, "connect to the AP fail\n");
-
-        /*ToDo: use a button to reconfigure wifi */
+        else {
+          ESP_LOGI(TAG, "Connect to the AP fail, Restarting now...\n");
+          esp_restart();
+        }
         break;
     default:
         break;
