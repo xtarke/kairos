@@ -6537,12 +6537,12 @@ $EndComp
 $Comp
 L Mechanical:MountingHole H3
 U 1 1 5CD3932A
-P 5900 1000
-F 0 "H3" H 6000 1046 50  0000 L CNN
-F 1 "MountingHole" H 6000 955 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 5900 1000 50  0001 C CNN
-F 3 "~" H 5900 1000 50  0001 C CNN
-	1    5900 1000
+P 5850 1000
+F 0 "H3" H 5950 1046 50  0000 L CNN
+F 1 "MountingHole" H 5950 955 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 5850 1000 50  0001 C CNN
+F 3 "~" H 5850 1000 50  0001 C CNN
+	1    5850 1000
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC

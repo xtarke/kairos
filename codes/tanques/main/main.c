@@ -44,7 +44,7 @@ static void  hearbeat_task(void *pvParameters)
 
   while(1) {
       uxBits = xEventGroupGetBits(s_wifi_event_group);
-      
+
       if((uxBits & CONNECTED_BIT) | (uxBits & MQTT_CONNECTED_BIT)){
           gpio_set_level(LED_HARTBEAT, 1);
           vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -96,9 +96,9 @@ void app_main()
     esp_log_level_set("*", ESP_LOG_INFO);
 
     configure_gpios();
+    comm_init();
     config_adc();
-    app_status_init();
-    comm_init();    
+    app_status_init();    
     initialise_wifi_touch();
 
     xTaskCreate(&hearbeat_task, "led_task",  256, NULL, 3, NULL);
@@ -106,7 +106,7 @@ void app_main()
     mqtt_app_start();
 
     xTaskCreate(&adc_task, "adc_task", 512, NULL, 4, NULL);
-    xTaskCreate(&pressure_task, "pressure_task", 1024, NULL, 4, NULL);    
+    xTaskCreate(&pressure_task, "pressure_task", 1024, NULL, 4, NULL);
     xTaskCreate(&status_task, "tank_status_task", 2048, NULL, 4, NULL);
-    
+
 }

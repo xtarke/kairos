@@ -7,7 +7,7 @@
     *  Unless required by applicable law or agreed to in writing, this
     *  software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
     *  CONDITIONS OF ANY KIND, either express or implied.
-    *      
+    *
     *  Modifications on: Dec 23, 2019
     *      Author: Renan Augusto Starke
     *
@@ -62,6 +62,8 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 
         err = esp_wifi_get_config(ESP_IF_WIFI_STA, &cfg);
 
+
+        uart_flush_input(UART_NUM_0);
         ESP_LOGI(TAG, "Wating 10s for configuration...");
 
         while (len != 0)

@@ -16,7 +16,13 @@ config BROKER_URL
     string "Broker URL"
     default "mqtt://iot.eclipse.org"
     help
-        URL of the broker to connect to
+        URL of the broker to connect to (mqqts for ssl)
+
+config BROKER_PORT
+    string "Broker PORT"
+    default 8883
+    help
+        PORT of the broker to connect to
 
 config BROKER_USER
     string "Broker user name"
