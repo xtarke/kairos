@@ -127,6 +127,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
     // your_context_t *context = event->context;
+
+    char sub_topic[] = CONFIG_HOST_NAME "/config";
+
     switch (event->event_id)
     {
     case MQTT_EVENT_CONNECTED:
@@ -140,8 +143,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
         // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "set config topic=%s", sub_topic);
+        msg_id = esp_mqtt_client_subscribe(client, sub_topic, 1);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         // msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
         // ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
@@ -153,9 +157,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
-        ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        /* ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
         msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);*/
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
@@ -164,9 +168,36 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         //ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
         break;
     case MQTT_EVENT_DATA:
-        ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        // printf("DATA=%.*s\r\n", event->data_len, event->data);
+        switch (event->data[0])
+        {
+          case 'w':
+              ESP_LOGI(TAG, "WiFi reset...");
+              set_reset_wifi(1);
+              break;
+          case '0':
+              ESP_LOGI(TAG, "Set/Unset sensor 0");
+              save_enable(0);
+              break;
+          case '1':
+              ESP_LOGI(TAG, "Set/Unset sensor 1");
+              save_enable(1);
+              break;
+          case '2':
+              ESP_LOGI(TAG, "Set/Unset sensor 2");
+              save_enable(2);
+              break;
+          case '3':
+              save_enable(3);
+              ESP_LOGI(TAG, "Set/Unset sensor 3");
+              break;
+          case 'p':
+              save_enable(4);
+              ESP_LOGI(TAG, "Set/Unset pressure sensor");
+              break;
+          default:
+              break;
+          }
         break;
     case MQTT_EVENT_ERROR:
         xEventGroupClearBits(s_wifi_event_group, MQTT_CONNECTED_BIT);

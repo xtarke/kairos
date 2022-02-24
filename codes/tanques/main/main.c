@@ -1,7 +1,7 @@
 
 /**
  * @file main.c
- * @brief Aquicontrol ESP32 RS-485 Sentral
+ * @brief Kairos ESP8266
  *
  *
  *

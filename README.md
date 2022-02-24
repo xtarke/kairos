@@ -47,20 +47,20 @@ P(i) = 375000*i - 1500   (0..6000 mBAR)
 
 - Instalar InfluxDB
 - Instalar Grafana [GrafanaInstall](https://grafana.com/grafana/download?platform=arm)
-- Instalar Python3 Influx: ```pip3 install influxdb --user``` 
-- Instalar paho-mqtt: ```pip3 install paho-mqtt --user``` 
+- Instalar Python3 Influx: ```pip3 install influxdb --user```
+- Instalar paho-mqtt: ```pip3 install paho-mqtt --user```
 
 ### Configurar InfluxDB
 
 Maiores detalhes  em [InfluxManual](https://docs.influxdata.com/influxdb/v1.7/administration/authentication_and_authorization/#authorization)
 
-- Criação usuário _admin_: 
+- Criação usuário _admin_:
 ```
 CREATE USER admin WITH PASSWORD '<password>' WITH ALL PRIVILEGES
 ```
 
 - Influx desabilita usuários por padrão, portanto altere a configuração de _/etc/influxdb/influxdb.conf_ para:
-``` 
+```
 [http]
   enabled = true
   bind-address = ":8086"
@@ -104,8 +104,33 @@ CREATE USER admin WITH PASSWORD '<password>' WITH ALL PRIVILEGES
 ## Manutenção banco de dados:
 
 ```
-show database 
+show databases
 use <database_name>
 select * from camera_temp
 drop series from camera_temp
+
+select * from "temp20-1" where "Float_value" > 1000
+
+#See: https://stackoverflow.com/questions/39685114/delete-points-with-unwanted-field-values-from-influxdb-measurement
+
+# Copy all valid data to a temporary measurement
+SELECT * INTO metrics_clean FROM metrics WHERE cpu!=-1
+
+# Drop existing dirty measurement
+DROP measurement metrics
+
+# Copy temporary measurement to existing measurement
+SELECT * INTO metrics FROM metrics_clean
+
+With timerange
+
+# Copy all valid data to a temporary measurement within timerange
+SELECT * INTO metrics_clean FROM metrics WHERE cpu!=-1 and time > '<start_time>' and time '<end_time>';
+
+# Delete existing dirty data within timerange
+DELETE FROM metrics WHERE time > '<start_time>' and time '<end_time>';
+
+# Copy temporary measurement to existing measurement
+SELECT * INTO metrics FROM metrics_clean
+
 ```

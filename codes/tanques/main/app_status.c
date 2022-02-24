@@ -67,13 +67,13 @@ void app_status_init()
 	{
 		err = nvs_get_i8(my_handle, "sensors", &sensors);
 
-		if (err != ESP_OK)
-		{
+		if (err != ESP_OK) {
 			ESP_LOGI(TAG, "New sensor flash table");
 			/* Enable bits:
-bit:     4  3   2  1  0
-sensor:  p  t3 t2  t1 t0
-default is: pressure, t0 and t1 : 0x13 */
+			bit:    5  4  3   2  1  0
+			sensor: wr p  t3 t2  t1 t0
+			default is: pressure, t0 and t1 : 0x13
+			wr is wifi reset                    */
 			nvs_set_i8(my_handle, "sensors", 0x13);
 			nvs_get_i8(my_handle, "sensors", &sensors);
 		}
@@ -96,21 +96,22 @@ default is: pressure, t0 and t1 : 0x13 */
 
 		err = nvs_get_i32(my_handle, "alpha", &alpha);
 
-		if (err != ESP_OK)
-		{
+		if (err != ESP_OK) {
 			ESP_LOGI(TAG, "New alpha flash table");
 			nvs_set_i32(my_handle, "alpha", 375000);
 			nvs_get_i32(my_handle, "alpha", &alpha);
 		}
+
 		ESP_LOGI(TAG, "alpha: %x", alpha);
 		set_pressure_alpha(alpha);
 
 		err = nvs_get_i32(my_handle, "beta", &beta);
-		if (err != ESP_OK)
-		{
+
+		if (err != ESP_OK) {
 			nvs_set_i32(my_handle, "beta", 1500);
 			nvs_get_i32(my_handle, "beta", &beta);
 		}
+
 		ESP_LOGI(TAG, "beta: %x", beta);
 		set_pressure_beta(beta);
 
@@ -127,6 +128,60 @@ void set_adc(uint16_t data)
 		xSemaphoreGive(sys_data_mutex);
 	}
 }
+
+void set_reset_wifi(uint8_t on_off){
+		esp_err_t err;
+		nvs_handle my_handle;
+		int8_t sensors = 0;
+
+		/* Open NVS (Non-Volatile Storage) */
+		err = nvs_open("storage", NVS_READWRITE, &my_handle);
+
+		if (err != ESP_OK){
+			ESP_LOGI(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+			return;
+		}
+		else	{
+			err = nvs_get_i8(my_handle, "sensors", &sensors);
+
+			if (on_off)
+				SET_BIT(sensors, 5);
+			else
+				CLR_BIT(sensors, 5);
+			/* Enable bits:
+			bit:    5  4  3   2  1  0
+			sensor: wr  p  t3 t2  t1 t0 */
+			nvs_set_i8(my_handle, "sensors", sensors);
+
+			nvs_close(my_handle);
+		}
+}
+
+uint8_t get_reset_wifi(){
+	esp_err_t err;
+	nvs_handle my_handle;
+	int8_t sensors = 0;
+
+	/* Open NVS (Non-Volatile Storage) */
+	err = nvs_open("storage", NVS_READWRITE, &my_handle);
+
+	if (err != ESP_OK){
+		ESP_LOGI(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+		return 0;
+	}
+	else	{
+		err = nvs_get_i8(my_handle, "sensors", &sensors);
+		/* Enable bits:
+		bit:    5  4  3   2  1  0
+		sensor: wr  p  t3 t2  t1 t0 */
+		nvs_close(my_handle);
+	}
+
+	return TST_BIT(sensors, 5);
+}
+
+
+
 
 uint16_t get_adc()
 {
@@ -387,32 +442,35 @@ uint8_t save_enable(uint8_t i)
 	nvs_handle my_handle;
 	int8_t sensors = 0;
 
-	if (i > MAX_485_SENSORS)
+	if (i > MAX_485_SENSORS + 1)
 		return 0;
 
 	/* Open NVS (Non-Volatile Storage) */
 	err = nvs_open("storage", NVS_READWRITE, &my_handle);
 
-	if (err != ESP_OK)
-	{
+	if (err != ESP_OK){
 		ESP_LOGI(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
 		return 0;
 	}
-	else
-	{
+	else	{
 		err = nvs_get_i8(my_handle, "sensors", &sensors);
 
 		CPL_BIT(sensors, i);
 		/* Enable bits:
-bit:     4  3   2  1  0
-sensor:  p  t3 t2  t1 t0
-default is: pressure, t0 and t1 : 0x13 */
+		bit:     4  3   2  1  0
+		sensor:  p  t3 t2  t1 t0
+		default is: pressure, t0 and t1 : 0x13 */
 		nvs_set_i8(my_handle, "sensors", sensors);
 
 		if (TST_BIT(sensors, i))
 			set_enable(i);
 		else
 			unset_enable(i);
+
+		if (TST_BIT(sensors, 4))
+			set_pressure_enable();
+		else
+			set_pressure_disable();
 
 		nvs_close(my_handle);
 	}

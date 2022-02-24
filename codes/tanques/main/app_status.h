@@ -48,6 +48,8 @@ void set_pressure_enable();
 void set_pressure_disable();
 uint8_t is_pressure_enable();
 
+void set_reset_wifi(uint8_t on_off);
+uint8_t get_reset_wifi();
 uint8_t save_enable(uint8_t i);
 
 #endif /* APP_STATUS_H_ */
